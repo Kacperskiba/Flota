@@ -1,0 +1,16 @@
+using System.Linq;
+using Flota.Domain.Entities;
+using Flota.Domain.Enums;
+namespace Flota.Infrastructure.Data;
+public static class DbInitializer {
+    public static void Initialize(FleetDbContext context) {
+        context.Database.EnsureCreated();
+        if (context.Pojazdy.Any()) return;
+        
+        context.Pojazdy.AddRange(
+            new SamochodOsobowy { Marka="Toyota", Model="Corolla", NumerRejestracyjny="CB12345", Przebieg=10000, PojemnoscZbiornika=50, Status=StatusPojazdu.Dostepny, LiczbaMiejsc=5 },
+            new SamochodCiezarowy { Marka="Volvo", Model="FH", NumerRejestracyjny="CB99999", Przebieg=500000, PojemnoscZbiornika=600, Status=StatusPojazdu.WUzytkowaniu, Ladownosc=20 }
+        );
+        context.SaveChanges();
+    }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" addBOMForNewFiles="with BOM under Windows, with no BOM otherwise">
+    <file url="file://$PROJECT_DIR$/Flota/Components/App.razor" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Flota/Components/Layout/MainLayout.razor" charset="ISO-8859-1" />
+    <file url="file://$PROJECT_DIR$/Flota/Components/Routes.razor" charset="UTF-8" />
+  </component>
+</project>

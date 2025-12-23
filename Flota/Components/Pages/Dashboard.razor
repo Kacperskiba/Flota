@@ -1,0 +1,115 @@
+@page "/"
+@using Flota.Domain.Entities
+@using Flota.Domain.Enums
+@using Flota.Domain.Interfaces
+@inject IPojazdSerwis PojazdSerwis
+@rendermode RenderMode.InteractiveServer
+
+@if(pojazdy == null)
+{
+    <p>Ładowanie danych...</p>
+}
+else
+{
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Wszystkie Pojazdy</div>
+            <div class="stat-value">@pojazdy.Count</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Dostępne</div>
+            <div class="stat-value">@pojazdy.Count(p => p.Status == StatusPojazdu.Dostepny)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">W Trasie (Użytkowane)</div>
+            <div class="stat-value">@pojazdy.Count(p => p.Status == StatusPojazdu.WUzytkowaniu)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">W Serwisie</div>
+            <div class="stat-value">@pojazdy.Count(p => p.Status == StatusPojazdu.WSerwisie)</div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <h2 class="section-title">Aktywne Pojazdy</h2>
+        
+        <div class="filter-tabs">
+            <button class="filter-tab @(activeFilter == "all" ? "active" : "")" 
+                    @onclick='() => Filtruj("all")'>Wszystkie</button>
+            <button class="filter-tab @(activeFilter == "available" ? "active" : "")" 
+                    @onclick='() => Filtruj("available")'>Dostępne</button>
+            <button class="filter-tab @(activeFilter == "in-service" ? "active" : "")" 
+                    @onclick='() => Filtruj("in-service")'>W Trasie</button>
+            <button class="filter-tab @(activeFilter == "maintenance" ? "active" : "")" 
+                    @onclick='() => Filtruj("maintenance")'>W Serwisie</button>
+        </div>
+    </div>
+
+    <div class="data-table">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Pojazd</th>
+                    <th>Nr Rejestracyjny</th>
+                    <th>Status</th>
+                    <th>Pojemność Baku</th>
+                    <th>Przebieg</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var pojazd in przefiltrowanePojazdy)
+                {
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600; color: #1F2937">@pojazd.Marka @pojazd.Model</div>
+                        </td>
+                        <td>@pojazd.NumerRejestracyjny</td>
+                        <td>
+                            <span class="@PobierzKlaseStatusu(pojazd.Status)">
+                                <span class="status-dot"></span>
+                                @pojazd.Status
+                            </span>
+                        </td>
+                        <td>@pojazd.PojemnoscZbiornika L</td>
+                        <td>@pojazd.Przebieg.ToString("N0") km</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<Pojazd>? pojazdy;
+    private List<Pojazd> przefiltrowanePojazdy = new();
+    private string activeFilter = "all";
+
+    protected override async Task OnInitializedAsync()
+    {
+        pojazdy = await PojazdSerwis.PobierzWszystkieAsync();
+        przefiltrowanePojazdy = pojazdy;
+    }
+
+    private void Filtruj(string filtr)
+    {
+        activeFilter = filtr;
+        
+        if (pojazdy == null) return;
+
+        przefiltrowanePojazdy = filtr switch
+        {
+            "available" => pojazdy.Where(p => p.Status == StatusPojazdu.Dostepny).ToList(),
+            "in-service" => pojazdy.Where(p => p.Status == StatusPojazdu.WUzytkowaniu).ToList(),
+            "maintenance" => pojazdy.Where(p => p.Status == StatusPojazdu.WSerwisie).ToList(),
+            _ => pojazdy // "all"
+        };
+    }
+
+    private string PobierzKlaseStatusu(StatusPojazdu status) => status switch
+    {
+        StatusPojazdu.Dostepny => "status-badge available",
+        StatusPojazdu.WUzytkowaniu => "status-badge in-service",
+        StatusPojazdu.WSerwisie => "status-badge maintenance",
+        _ => "status-badge"
+    };
+}
