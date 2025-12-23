@@ -18,6 +18,7 @@ builder.Services.AddDbContext<FleetDbContext>(o => o.UseSqlServer(conn));
 
 builder.Services.AddScoped<IPojazdSerwis, PojazdSerwis>();
 builder.Services.AddScoped<ITankowanieSerwis, TankowanieSerwis>();
+builder.Services.AddScoped<IKierowcaSerwis, KierowcaSerwis>();
 
 var app = builder.Build();
 

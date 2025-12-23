@@ -1,0 +1,125 @@
+﻿@page "/kierowcy"
+@using Flota.Domain.Entities
+@using Flota.Domain.Interfaces
+@inject IKierowcaSerwis KierowcaSerwis
+@rendermode RenderMode.InteractiveServer
+
+<div class="section-header">
+    <h2 class="section-title">Zarządzanie Kierowcami</h2>
+</div>
+
+<div class="form-container" style="margin-bottom: 32px;">
+    <div class="form-header">
+        <h2 class="form-title">Dodaj Nowego Kierowcę</h2>
+        <p class="form-subtitle">Wprowadź dane kierowcy do systemu</p>
+    </div>
+
+    <EditForm Model="@nowyKierowca" OnValidSubmit="DodajKierowce">
+        <DataAnnotationsValidator />
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Imię</label>
+                <InputText @bind-Value="nowyKierowca.Imie" class="form-input" placeholder="Wprowadź imię" />
+                <ValidationMessage For="@(() => nowyKierowca.Imie)" class="text-danger small"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nazwisko</label>
+                <InputText @bind-Value="nowyKierowca.Nazwisko" class="form-input" placeholder="Wprowadź nazwisko" />
+                <ValidationMessage For="@(() => nowyKierowca.Nazwisko)" class="text-danger small"/>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Numer Prawa Jazdy</label>
+                <InputText @bind-Value="nowyKierowca.NumerPrawaJazdy" class="form-input" placeholder="ABC123456" />
+                <ValidationMessage For="@(() => nowyKierowca.NumerPrawaJazdy)" class="text-danger small"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Telefon (Opcjonalnie)</label>
+                <InputText @bind-Value="nowyKierowca.Telefon" class="form-input" placeholder="+48 123 456 789" />
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn-secondary" @onclick="WyczyscFormularz">Wyczyść</button>
+            <button type="submit" class="btn-primary">Dodaj Kierowcę</button>
+        </div>
+        
+        @if (pokazSukces)
+        {
+            <div class="alert alert-success mt-3">
+                Kierowca został dodany pomyślnie!
+            </div>
+        }
+    </EditForm>
+</div>
+
+<div class="data-table">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Imię i Nazwisko</th>
+                <th>Nr Prawa Jazdy</th>
+                <th>Telefon</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (kierowcy == null)
+            {
+                <tr><td colspan="3">Ładowanie...</td></tr>
+            }
+            else if (!kierowcy.Any())
+            {
+                <tr><td colspan="3">Brak kierowców w bazie.</td></tr>
+            }
+            else
+            {
+                @foreach (var k in kierowcy)
+                {
+                    <tr>
+                        <td><div style="font-weight: 600;">@k.Imie @k.Nazwisko</div></td>
+                        <td>@k.NumerPrawaJazdy</td>
+                        <td>@(k.Telefon ?? "-")</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<Kierowca>? kierowcy;
+    private Kierowca nowyKierowca = new();
+    private bool pokazSukces = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ZaladujListe();
+    }
+
+    private async Task ZaladujListe()
+    {
+        kierowcy = await KierowcaSerwis.PobierzWszystkichAsync();
+    }
+
+    private async Task DodajKierowce()
+    {
+        await KierowcaSerwis.DodajAsync(nowyKierowca);
+        pokazSukces = true;
+        nowyKierowca = new Kierowca(); // Reset formularza
+        await ZaladujListe(); // Odśwież listę
+        
+        // Ukryj komunikat po 3 sekundach
+        await Task.Delay(3000);
+        pokazSukces = false;
+        StateHasChanged();
+    }
+
+    private void WyczyscFormularz()
+    {
+        nowyKierowca = new Kierowca();
+        pokazSukces = false;
+    }
+}
