@@ -4,20 +4,29 @@ namespace Flota.Domain.Entities;
 
 public class Kierowca
 {
-    [Key] 
+    [Key]
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "Imię jest wymagane"), MaxLength(50)] 
+    [Required, MaxLength(50)]
     public string Imie { get; set; } = "";
 
-    [Required(ErrorMessage = "Nazwisko jest wymagane"), MaxLength(50)] 
+    [Required, MaxLength(50)]
     public string Nazwisko { get; set; } = "";
 
-    [Required(ErrorMessage = "Numer prawa jazdy jest wymagany"), MaxLength(20)] 
+    [Required, MaxLength(20)]
     public string NumerPrawaJazdy { get; set; } = "";
-    
-    
-    public string? Telefon { get; set; }
+
+    [MaxLength(100)]
     public string? Email { get; set; }
-    public DateTime? DataZatrudnienia { get; set; } = DateTime.Now;
+
+    [MaxLength(11)]
+    public string? NrTelefonu { get; set; } // Zmieniona nazwa zgodnie z tabelą
+
+    [MaxLength(100)]
+    public string? Adres { get; set; } // NOWE POLE
+
+    public int LataDoswiadczenia { get; set; } // NOWE POLE
+    
+    // Imię i nazwisko jako jeden string (wygodne do wyświetlania)
+    public string PelneImie => $"{Imie} {Nazwisko}";
 }

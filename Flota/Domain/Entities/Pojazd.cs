@@ -7,35 +7,32 @@ namespace Flota.Domain.Entities;
 
 public class Pojazd
 {
-    [Key] 
+    [Key]
     public int Id { get; set; }
 
-    [FlotaDisplay("Marka", 1)] 
-    [Required(ErrorMessage = "Marka jest wymagana"), MaxLength(50)] 
+    [FlotaDisplay("Marka", 1)]
+    [Required, MaxLength(50)]
     public string Marka { get; set; } = "";
 
-    [FlotaDisplay("Model", 2)] 
-    [Required(ErrorMessage = "Model jest wymagany"), MaxLength(50)] 
+    [FlotaDisplay("Model", 2)]
+    [Required, MaxLength(50)]
     public string Model { get; set; } = "";
 
-    [FlotaDisplay("Nr Rej.", 3)] 
-    [Required(ErrorMessage = "Numer rejestracyjny jest wymagany"), MaxLength(20)] 
+    [FlotaDisplay("Rok Prod.", 3)]
+    public int RokProdukcji { get; set; } // NOWE POLE
+
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal PojemnoscZbiornika { get; set; }
+
+    [Required, MaxLength(20)]
     public string NumerRejestracyjny { get; set; } = "";
 
-    [FlotaDisplay("Przebieg", 4)] 
-    [Column(TypeName = "decimal(12,1)")] 
+    [Column(TypeName = "decimal(12,1)")]
     public decimal Przebieg { get; set; }
 
     public StatusPojazdu Status { get; set; }
 
-    [Column(TypeName = "decimal(10,2)")] 
-    public decimal PojemnoscZbiornika { get; set; }
-
-    // Pola, które wcześniej były w osobnych klasach, teraz są tutaj jako Opcjonalne (?)
+    // Pola opcjonalne (zostawiamy je, bo mogą się przydać, ale nie są wymagane w Twoim nowym schemacie)
     public int? LiczbaMiejsc { get; set; }
-
-    [Column(TypeName = "decimal(10,2)")] 
     public decimal? Ladownosc { get; set; }
-
-    public virtual ICollection<Tankowanie> Tankowania { get; set; } = new List<Tankowanie>();
 }

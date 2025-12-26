@@ -1,0 +1,178 @@
+﻿@page "/przydzialy"
+@using Flota.Domain.Entities
+@using Flota.Domain.Enums
+@using Flota.Domain.Interfaces
+@inject IPrzydzialSerwis PrzydzialSerwis
+@inject IPojazdSerwis PojazdSerwis
+@inject IKierowcaSerwis KierowcaSerwis
+@rendermode RenderMode.InteractiveServer
+
+<div class="section-header">
+    <h2 class="section-title">Dyspozytornia (Przydziały)</h2>
+</div>
+
+<div class="form-container" style="margin-bottom: 32px;">
+    <div class="form-header">
+        <h2 class="form-title">Wydaj Pojazd</h2>
+        <p class="form-subtitle">Wybierz dostępny pojazd i przypisz kierowcę</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(blad))
+    {
+        <div class="alert alert-danger">@blad</div>
+    }
+
+    <EditForm Model="@nowyPrzydzial" OnValidSubmit="WydajPojazd">
+        <DataAnnotationsValidator />
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Pojazd (Tylko dostępne)</label>
+                <InputSelect @bind-Value="nowyPrzydzial.PojazdId" class="form-input">
+                    <option value="0">-- Wybierz Pojazd --</option>
+                    @if (dostepnePojazdy != null)
+                    {
+                        foreach (var p in dostepnePojazdy)
+                        {
+                            <option value="@p.Id">@p.Marka @p.Model (@p.NumerRejestracyjny)</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Kierowca</label>
+                <InputSelect @bind-Value="nowyPrzydzial.KierowcaId" class="form-input">
+                    <option value="0">-- Wybierz Kierowcę --</option>
+                    @if (kierowcy != null)
+                    {
+                        foreach (var k in kierowcy)
+                        {
+                            <option value="@k.Id">@k.PelneImie</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Wydaj Pojazd</button>
+        </div>
+    </EditForm>
+</div>
+
+<div class="section-header">
+    <h3 class="section-title">Pojazdy w Trasie (Aktywne)</h3>
+</div>
+
+<div class="data-table">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Pojazd</th>
+                <th>Kierowca</th>
+                <th>Data Wydania</th>
+                <th>Stan Licznika (Start)</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (aktywnePrzydzialy == null) { <tr><td colspan="5">Ładowanie...</td></tr> }
+            else if (!aktywnePrzydzialy.Any()) { <tr><td colspan="5">Brak pojazdów w trasie.</td></tr> }
+            else
+            {
+                @foreach (var p in aktywnePrzydzialy)
+                {
+                    <tr>
+                        <td><strong>@p.Pojazd.Marka @p.Pojazd.Model</strong> <br/><small>@p.Pojazd.NumerRejestracyjny</small></td>
+                        <td>@p.Kierowca.PelneImie</td>
+                        <td>@p.DataRozpoczecia.ToString("g")</td>
+                        <td>@p.PrzebiegPoczatkowy km</td>
+                        <td>
+                            @if (idDoZwrotu == p.Id)
+                            {
+                                <div style="display:flex; gap:5px; align-items:center;">
+                                    <input type="number" @bind="przebiegPrzyZwrocie" class="form-control form-control-sm" placeholder="Nowy przebieg" style="width: 100px;" />
+                                    <button class="btn btn-success btn-sm" @onclick="() => ZatwierdzZwrot(p.Id)">OK</button>
+                                    <button class="btn btn-secondary btn-sm" @onclick="AnulujZwrot">X</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <button class="btn btn-warning btn-sm" @onclick="() => PrzygotujZwrot(p.Id, p.Pojazd.Przebieg)">Zwróć</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private Przydzial nowyPrzydzial = new();
+    private List<Pojazd>? dostepnePojazdy;
+    private List<Kierowca>? kierowcy;
+    private List<Przydzial>? aktywnePrzydzialy;
+    
+    private string blad = "";
+    
+    // Zmienne do obsługi zwrotu
+    private int? idDoZwrotu = null;
+    private decimal przebiegPrzyZwrocie;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ZaladujDane();
+    }
+
+    private async Task ZaladujDane()
+    {
+        // Pobieramy TYLKO dostępne pojazdy do listy rozwijanej
+        var wszystkie = await PojazdSerwis.PobierzWszystkieAsync();
+        dostepnePojazdy = wszystkie.Where(p => p.Status == StatusPojazdu.Dostepny).ToList();
+        
+        kierowcy = await KierowcaSerwis.PobierzWszystkichAsync();
+        aktywnePrzydzialy = await PrzydzialSerwis.PobierzAktywneAsync();
+    }
+
+    private async Task WydajPojazd()
+    {
+        blad = "";
+        if (nowyPrzydzial.PojazdId == 0 || nowyPrzydzial.KierowcaId == 0)
+        {
+            blad = "Wybierz pojazd i kierowcę.";
+            return;
+        }
+
+        try
+        {
+            await PrzydzialSerwis.WydajPojazdAsync(nowyPrzydzial);
+            nowyPrzydzial = new(); // Reset
+            await ZaladujDane(); // Odśwież listy (auto zniknie z dostępnych, pojawi się w aktywnych)
+        }
+        catch (Exception ex)
+        {
+            blad = ex.Message;
+        }
+    }
+
+    // Logika UI dla zwrotu
+    private void PrzygotujZwrot(int id, decimal aktualnyPrzebieg)
+    {
+        idDoZwrotu = id;
+        przebiegPrzyZwrocie = aktualnyPrzebieg; // Podpowiadamy aktualny przebieg
+    }
+
+    private void AnulujZwrot()
+    {
+        idDoZwrotu = null;
+    }
+
+    private async Task ZatwierdzZwrot(int id)
+    {
+        await PrzydzialSerwis.ZwrocPojazdAsync(id, przebiegPrzyZwrocie, DateTime.Now);
+        idDoZwrotu = null;
+        await ZaladujDane(); // Auto wróci do dostępnych
+    }
+}

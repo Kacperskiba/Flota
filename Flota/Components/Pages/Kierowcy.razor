@@ -38,7 +38,7 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Telefon (Opcjonalnie)</label>
-                <InputText @bind-Value="nowyKierowca.Telefon" class="form-input" placeholder="+48 123 456 789" />
+                <InputText @bind-Value="nowyKierowca.NrTelefonu" class="form-input" placeholder="+48 123 456 789" />
             </div>
         </div>
 
@@ -81,7 +81,7 @@
                     <tr>
                         <td><div style="font-weight: 600;">@k.Imie @k.Nazwisko</div></td>
                         <td>@k.NumerPrawaJazdy</td>
-                        <td>@(k.Telefon ?? "-")</td>
+                        <td>@(k.NrTelefonu ?? "-")</td>
                     </tr>
                 }
             }

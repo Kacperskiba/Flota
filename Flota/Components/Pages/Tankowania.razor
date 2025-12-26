@@ -1,0 +1,120 @@
+﻿@page "/tankowania"
+@using Flota.Domain.Entities
+@using Flota.Domain.Interfaces
+@inject ITankowanieSerwis TankowanieSerwis
+@inject IPojazdSerwis PojazdSerwis
+@rendermode RenderMode.InteractiveServer
+
+<div class="section-header">
+    <h2 class="section-title">Rejestr Tankowań</h2>
+</div>
+
+<div class="form-container" style="margin-bottom: 32px;">
+    <div class="form-header">
+        <h2 class="form-title">Dodaj Tankowanie</h2>
+    </div>
+
+    <EditForm Model="@noweTankowanie" OnValidSubmit="DodajTankowanie">
+        <DataAnnotationsValidator />
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Wybierz Pojazd</label>
+                <InputSelect @bind-Value="noweTankowanie.PojazdId" class="form-input">
+                    <option value="0">-- Wybierz --</option>
+                    @if (listaPojazdow != null)
+                    {
+                        foreach (var p in listaPojazdow)
+                        {
+                            <option value="@p.Id">@p.Marka @p.Model (@p.NumerRejestracyjny)</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data</label>
+                <InputDate @bind-Value="noweTankowanie.Data" class="form-input" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Ilość Litrów</label>
+                <InputNumber @bind-Value="noweTankowanie.IloscLitrow" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cena za Litr (PLN)</label>
+                <InputNumber @bind-Value="noweTankowanie.CenaZaLitr" class="form-input" />
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Zapisz Tankowanie</button>
+        </div>
+        
+        @if (pokazSukces)
+        {
+            <div class="alert alert-success mt-3">Tankowanie zapisane!</div>
+        }
+    </EditForm>
+</div>
+
+<div class="data-table">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Pojazd</th>
+                <th>Data</th>
+                <th>Paliwo</th>
+                <th>Koszt</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (tankowania == null) { <tr><td colspan="4">Ładowanie...</td></tr> }
+            else
+            {
+                @foreach (var t in tankowania)
+                {
+                    <tr>
+                        <td><strong>@t.Pojazd?.Marka @t.Pojazd?.Model</strong> <br/> <small>@t.Pojazd?.NumerRejestracyjny</small></td>
+                        <td>@t.Data.ToShortDateString()</td>
+                        <td>@t.IloscLitrow L</td>
+                        <td>@((t.IloscLitrow * t.CenaZaLitr).ToString("C"))</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<Tankowanie>? tankowania;
+    private List<Pojazd>? listaPojazdow;
+    private Tankowanie noweTankowanie = new() { Data = DateTime.Now };
+    private bool pokazSukces = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        listaPojazdow = await PojazdSerwis.PobierzWszystkieAsync();
+        await ZaladujTankowania();
+    }
+
+    private async Task ZaladujTankowania()
+    {
+        tankowania = await TankowanieSerwis.PobierzWszystkieAsync();
+    }
+
+    private async Task DodajTankowanie()
+    {
+        if (noweTankowanie.PojazdId == 0) return; // Walidacja wyboru auta
+
+        await TankowanieSerwis.DodajAsync(noweTankowanie);
+        pokazSukces = true;
+        noweTankowanie = new() { Data = DateTime.Now }; // Reset
+        await ZaladujTankowania();
+        
+        await Task.Delay(3000);
+        pokazSukces = false;
+        StateHasChanged();
+    }
+}

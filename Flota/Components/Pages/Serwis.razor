@@ -1,0 +1,136 @@
+﻿@page "/serwis"
+@using Flota.Domain.Entities
+@using Flota.Domain.Interfaces
+@inject ISerwisPojazduSerwis SerwisService
+@inject IPojazdSerwis PojazdSerwis
+@rendermode RenderMode.InteractiveServer
+
+<div class="section-header">
+    <h2 class="section-title">Serwis i Naprawy</h2>
+</div>
+
+<div class="form-container" style="margin-bottom: 32px;">
+    <div class="form-header">
+        <h2 class="form-title">Zgłoś Usterkę / Przegląd</h2>
+    </div>
+
+    <EditForm Model="@noweZgloszenie" OnValidSubmit="DodajZgloszenie">
+        <DataAnnotationsValidator />
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Wybierz Pojazd</label>
+                <InputSelect @bind-Value="noweZgloszenie.PojazdId" class="form-input">
+                    <option value="0">-- Wybierz --</option>
+                    @if (listaPojazdow != null)
+                    {
+                        foreach (var p in listaPojazdow)
+                        {
+                            <option value="@p.Id">@p.Marka @p.Model (@p.NumerRejestracyjny)</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data Zgłoszenia</label>
+                <InputDate @bind-Value="noweZgloszenie.DataZgloszenia" class="form-input" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Opis Problemu / Zakres Prac</label>
+            <InputTextArea @bind-Value="noweZgloszenie.Opis" class="form-input" rows="3" />
+            <ValidationMessage For="@(() => noweZgloszenie.Opis)" class="text-danger small"/>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Szacowany Koszt (PLN)</label>
+                <InputNumber @bind-Value="noweZgloszenie.Koszt" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <InputSelect @bind-Value="noweZgloszenie.Status" class="form-input">
+                    <option value="W Trakcie">W Trakcie</option>
+                    <option value="Zakończone">Zakończone</option>
+                    <option value="Planowane">Planowane</option>
+                </InputSelect>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Dodaj Zgłoszenie</button>
+        </div>
+        
+        @if (pokazSukces)
+        {
+            <div class="alert alert-success mt-3">Zgłoszenie dodane!</div>
+        }
+    </EditForm>
+</div>
+
+<div class="data-table">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Pojazd</th>
+                <th>Opis</th>
+                <th>Data</th>
+                <th>Koszt</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (zgloszenia == null) { <tr><td colspan="5">Ładowanie...</td></tr> }
+            else
+            {
+                @foreach (var z in zgloszenia)
+                {
+                    <tr>
+                        <td><strong>@z.Pojazd?.Marka</strong> <small>@z.Pojazd?.NumerRejestracyjny</small></td>
+                        <td>@z.Opis</td>
+                        <td>@z.DataZgloszenia.ToShortDateString()</td>
+                        <td>@z.Koszt.ToString("C")</td>
+                        <td>
+                            <span class="@(z.Status == "Zakończone" ? "status-badge available" : "status-badge maintenance")">
+                                @z.Status
+                            </span>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<ZgloszenieSerwisowe>? zgloszenia;
+    private List<Pojazd>? listaPojazdow;
+    private ZgloszenieSerwisowe noweZgloszenie = new() { DataZgloszenia = DateTime.Now };
+    private bool pokazSukces = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        listaPojazdow = await PojazdSerwis.PobierzWszystkieAsync();
+        await ZaladujZgloszenia();
+    }
+
+    private async Task ZaladujZgloszenia()
+    {
+        zgloszenia = await SerwisService.PobierzWszystkieAsync();
+    }
+
+    private async Task DodajZgloszenie()
+    {
+        if (noweZgloszenie.PojazdId == 0) return;
+
+        await SerwisService.DodajAsync(noweZgloszenie);
+        pokazSukces = true;
+        noweZgloszenie = new() { DataZgloszenia = DateTime.Now };
+        await ZaladujZgloszenia();
+        
+        await Task.Delay(3000);
+        pokazSukces = false;
+        StateHasChanged();
+    }
+}

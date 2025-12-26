@@ -7,17 +7,21 @@ public class FleetDbContext : DbContext
 {
     public FleetDbContext(DbContextOptions<FleetDbContext> options) : base(options) { }
 
-    // Zostawiamy tylko główną tabelę Pojazdy (bez podziału na typy)
     public DbSet<Pojazd> Pojazdy { get; set; }
     public DbSet<Kierowca> Kierowcy { get; set; }
     public DbSet<Tankowanie> Tankowania { get; set; }
+    
+    public DbSet<ZgloszenieSerwisowe> ZgloszeniaSerwisowe { get; set; }
+    public DbSet<Przydzial> Przydzialy { get; set; } // <--- NOWA TABELA
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) 
     {
-        // Usunąłem konfigurację "HasDiscriminator", bo już jej nie potrzebujemy.
-        // Zostawiamy tylko unikalność numeru rejestracyjnego.
         modelBuilder.Entity<Pojazd>()
             .HasIndex(p => p.NumerRejestracyjny)
+            .IsUnique();
+            
+        modelBuilder.Entity<Kierowca>()
+            .HasIndex(k => k.NumerPrawaJazdy)
             .IsUnique();
     }
 }

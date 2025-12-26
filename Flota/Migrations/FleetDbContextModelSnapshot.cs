@@ -30,31 +30,40 @@ namespace Flota.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("DataZatrudnienia")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Adres")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Imie")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("LataDoswiadczenia")
+                        .HasColumnType("int");
+
                     b.Property<string>("Nazwisko")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("NrTelefonu")
+                        .HasMaxLength(11)
+                        .HasColumnType("nvarchar(11)");
 
                     b.Property<string>("NumerPrawaJazdy")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("Telefon")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("NumerPrawaJazdy")
+                        .IsUnique();
 
                     b.ToTable("Kierowcy");
                 });
@@ -68,7 +77,7 @@ namespace Flota.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal?>("Ladownosc")
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("LiczbaMiejsc")
                         .HasColumnType("int");
@@ -94,6 +103,9 @@ namespace Flota.Migrations
                     b.Property<decimal>("Przebieg")
                         .HasColumnType("decimal(12,1)");
 
+                    b.Property<int>("RokProdukcji")
+                        .HasColumnType("int");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -103,6 +115,41 @@ namespace Flota.Migrations
                         .IsUnique();
 
                     b.ToTable("Pojazdy");
+                });
+
+            modelBuilder.Entity("Flota.Domain.Entities.Przydzial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DataRozpoczecia")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DataZakonczenia")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("KierowcaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PojazdId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("PrzebiegKoncowy")
+                        .HasColumnType("decimal(12,1)");
+
+                    b.Property<decimal>("PrzebiegPoczatkowy")
+                        .HasColumnType("decimal(12,1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KierowcaId");
+
+                    b.HasIndex("PojazdId");
+
+                    b.ToTable("Przydzialy");
                 });
 
             modelBuilder.Entity("Flota.Domain.Entities.Tankowanie", b =>
@@ -132,10 +179,61 @@ namespace Flota.Migrations
                     b.ToTable("Tankowania");
                 });
 
+            modelBuilder.Entity("Flota.Domain.Entities.ZgloszenieSerwisowe", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DataZgloszenia")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Koszt")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Opis")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PojazdId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PojazdId");
+
+                    b.ToTable("ZgloszeniaSerwisowe");
+                });
+
+            modelBuilder.Entity("Flota.Domain.Entities.Przydzial", b =>
+                {
+                    b.HasOne("Flota.Domain.Entities.Kierowca", "Kierowca")
+                        .WithMany()
+                        .HasForeignKey("KierowcaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Flota.Domain.Entities.Pojazd", "Pojazd")
+                        .WithMany()
+                        .HasForeignKey("PojazdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Kierowca");
+
+                    b.Navigation("Pojazd");
+                });
+
             modelBuilder.Entity("Flota.Domain.Entities.Tankowanie", b =>
                 {
                     b.HasOne("Flota.Domain.Entities.Pojazd", "Pojazd")
-                        .WithMany("Tankowania")
+                        .WithMany()
                         .HasForeignKey("PojazdId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -143,9 +241,15 @@ namespace Flota.Migrations
                     b.Navigation("Pojazd");
                 });
 
-            modelBuilder.Entity("Flota.Domain.Entities.Pojazd", b =>
+            modelBuilder.Entity("Flota.Domain.Entities.ZgloszenieSerwisowe", b =>
                 {
-                    b.Navigation("Tankowania");
+                    b.HasOne("Flota.Domain.Entities.Pojazd", "Pojazd")
+                        .WithMany()
+                        .HasForeignKey("PojazdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pojazd");
                 });
 #pragma warning restore 612, 618
         }
