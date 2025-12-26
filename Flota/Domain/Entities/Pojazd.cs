@@ -5,7 +5,7 @@ using Flota.Domain.Enums;
 
 namespace Flota.Domain.Entities;
 
-public abstract class Pojazd
+public class Pojazd
 {
     [Key] 
     public int Id { get; set; }
@@ -31,16 +31,11 @@ public abstract class Pojazd
     [Column(TypeName = "decimal(10,2)")] 
     public decimal PojemnoscZbiornika { get; set; }
 
-    public virtual ICollection<Tankowanie> Tankowania { get; set; } = new List<Tankowanie>();
-}
+    // Pola, które wcześniej były w osobnych klasach, teraz są tutaj jako Opcjonalne (?)
+    public int? LiczbaMiejsc { get; set; }
 
-public class SamochodOsobowy : Pojazd
-{
-    public int LiczbaMiejsc { get; set; }
-}
-
-public class SamochodCiezarowy : Pojazd
-{
     [Column(TypeName = "decimal(10,2)")] 
-    public decimal Ladownosc { get; set; }
+    public decimal? Ladownosc { get; set; }
+
+    public virtual ICollection<Tankowanie> Tankowania { get; set; } = new List<Tankowanie>();
 }

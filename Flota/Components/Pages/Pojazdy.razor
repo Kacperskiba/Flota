@@ -1,0 +1,140 @@
+﻿@page "/pojazdy"
+@using Flota.Domain.Entities
+@using Flota.Domain.Enums
+@using Flota.Domain.Interfaces
+@inject IPojazdSerwis PojazdSerwis
+@rendermode RenderMode.InteractiveServer
+
+<div class="section-header">
+    <h2 class="section-title">Zarządzanie Pojazdami</h2>
+</div>
+
+<div class="form-container" style="margin-bottom: 32px;">
+    <div class="form-header">
+        <h2 class="form-title">Dodaj Nowy Pojazd</h2>
+        <p class="form-subtitle">Wprowadź dane techniczne pojazdu</p>
+    </div>
+
+    <EditForm Model="@nowyPojazd" OnValidSubmit="DodajPojazd">
+        <DataAnnotationsValidator />
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Marka</label>
+                <InputText @bind-Value="nowyPojazd.Marka" class="form-input" placeholder="np. Toyota" />
+                <ValidationMessage For="@(() => nowyPojazd.Marka)" class="text-danger small"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Model</label>
+                <InputText @bind-Value="nowyPojazd.Model" class="form-input" placeholder="np. Corolla" />
+                <ValidationMessage For="@(() => nowyPojazd.Model)" class="text-danger small"/>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Nr Rejestracyjny</label>
+                <InputText @bind-Value="nowyPojazd.NumerRejestracyjny" class="form-input" placeholder="DW 12345" />
+                <ValidationMessage For="@(() => nowyPojazd.NumerRejestracyjny)" class="text-danger small"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Pojemność Baku (L)</label>
+                <InputNumber @bind-Value="nowyPojazd.PojemnoscZbiornika" class="form-input" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Przebieg (km)</label>
+                <InputNumber @bind-Value="nowyPojazd.Przebieg" class="form-input" />
+            </div>
+             <div class="form-group">
+                <label class="form-label">Liczba Miejsc (Opcjonalne)</label>
+                <InputNumber @bind-Value="nowyPojazd.LiczbaMiejsc" class="form-input" />
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Ładowność kg (Opcjonalne)</label>
+                <InputNumber @bind-Value="nowyPojazd.Ladownosc" class="form-input" />
+            </div>
+            <div class="form-group">
+                </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Dodaj Pojazd</button>
+        </div>
+        
+        @if (pokazSukces)
+        {
+            <div class="alert alert-success mt-3">Pojazd został dodany!</div>
+        }
+    </EditForm>
+</div>
+
+<div class="data-table">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Pojazd</th>
+                <th>Rejestracja</th>
+                <th>Specyfikacja</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (pojazdy == null) { <tr><td colspan="4">Ładowanie...</td></tr> }
+            else
+            {
+                @foreach (var p in pojazdy)
+                {
+                    <tr>
+                        <td><strong>@p.Marka @p.Model</strong></td>
+                        <td>@p.NumerRejestracyjny</td>
+                        <td>
+                            @if(p.LiczbaMiejsc > 0) { <span class="badge bg-light text-dark me-1">👤 @p.LiczbaMiejsc miejsc</span> }
+                            @if(p.Ladownosc > 0) { <span class="badge bg-light text-dark">📦 @p.Ladownosc kg</span> }
+                        </td>
+                        <td>
+                            <span class="@(p.Status == StatusPojazdu.Dostepny ? "status-badge available" : "status-badge in-service")">
+                                @p.Status
+                            </span>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<Pojazd>? pojazdy;
+    private Pojazd nowyPojazd = new Pojazd();
+    private bool pokazSukces = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ZaladujPojazdy();
+    }
+
+    private async Task ZaladujPojazdy()
+    {
+        pojazdy = await PojazdSerwis.PobierzWszystkieAsync();
+    }
+
+    private async Task DodajPojazd()
+    {
+        nowyPojazd.Status = StatusPojazdu.Dostepny;
+        await PojazdSerwis.DodajAsync(nowyPojazd);
+        
+        pokazSukces = true;
+        nowyPojazd = new Pojazd(); // Reset formularza
+        await ZaladujPojazdy();
+        
+        await Task.Delay(3000);
+        pokazSukces = false;
+        StateHasChanged();
+    }
+}

@@ -67,6 +67,12 @@ namespace Flota.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("Ladownosc")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int?>("LiczbaMiejsc")
+                        .HasColumnType("int");
+
                     b.Property<string>("Marka")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -91,21 +97,12 @@ namespace Flota.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<string>("Typ")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("nvarchar(13)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("NumerRejestracyjny")
                         .IsUnique();
 
                     b.ToTable("Pojazdy");
-
-                    b.HasDiscriminator<string>("Typ").HasValue("Pojazd");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Flota.Domain.Entities.Tankowanie", b =>
@@ -133,26 +130,6 @@ namespace Flota.Migrations
                     b.HasIndex("PojazdId");
 
                     b.ToTable("Tankowania");
-                });
-
-            modelBuilder.Entity("Flota.Domain.Entities.SamochodCiezarowy", b =>
-                {
-                    b.HasBaseType("Flota.Domain.Entities.Pojazd");
-
-                    b.Property<decimal>("Ladownosc")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.HasDiscriminator().HasValue("Ciezarowy");
-                });
-
-            modelBuilder.Entity("Flota.Domain.Entities.SamochodOsobowy", b =>
-                {
-                    b.HasBaseType("Flota.Domain.Entities.Pojazd");
-
-                    b.Property<int>("LiczbaMiejsc")
-                        .HasColumnType("int");
-
-                    b.HasDiscriminator().HasValue("Osobowy");
                 });
 
             modelBuilder.Entity("Flota.Domain.Entities.Tankowanie", b =>

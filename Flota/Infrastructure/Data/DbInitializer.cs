@@ -8,8 +8,8 @@ public static class DbInitializer {
         if (context.Pojazdy.Any()) return;
         
         context.Pojazdy.AddRange(
-            new SamochodOsobowy { Marka="Toyota", Model="Corolla", NumerRejestracyjny="CB12345", Przebieg=10000, PojemnoscZbiornika=50, Status=StatusPojazdu.Dostepny, LiczbaMiejsc=5 },
-            new SamochodCiezarowy { Marka="Volvo", Model="FH", NumerRejestracyjny="CB99999", Przebieg=500000, PojemnoscZbiornika=600, Status=StatusPojazdu.WUzytkowaniu, Ladownosc=20 }
+            new Pojazd { Marka="Toyota", Model="Corolla", NumerRejestracyjny="CB12345", Przebieg=10000, PojemnoscZbiornika=50, Status=StatusPojazdu.Dostepny, LiczbaMiejsc=5 },
+            new Pojazd { Marka="Volvo", Model="FH", NumerRejestracyjny="CB99999", Przebieg=500000, PojemnoscZbiornika=600, Status=StatusPojazdu.WUzytkowaniu, Ladownosc=20 }
         );
         context.SaveChanges();
     }

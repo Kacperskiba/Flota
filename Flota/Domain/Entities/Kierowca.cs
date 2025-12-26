@@ -16,7 +16,7 @@ public class Kierowca
     [Required(ErrorMessage = "Numer prawa jazdy jest wymagany"), MaxLength(20)] 
     public string NumerPrawaJazdy { get; set; } = "";
     
-    // Pola opcjonalne z prototypu HTML
+    
     public string? Telefon { get; set; }
     public string? Email { get; set; }
     public DateTime? DataZatrudnienia { get; set; } = DateTime.Now;

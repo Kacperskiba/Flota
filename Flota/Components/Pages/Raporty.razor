@@ -1,0 +1,109 @@
+﻿@page "/raporty" // Zmieniłem link z "charts" na "raporty", żeby pasował do polskiego menu
+@using Flota.Domain.Entities
+@using Flota.Domain.Enums
+@using Flota.Domain.Interfaces
+@inject IPojazdSerwis PojazdSerwis
+@inject IKierowcaSerwis KierowcaSerwis
+@rendermode RenderMode.InteractiveServer
+
+<div class="section-header">
+    <h2 class="section-title">Raporty i Analityka</h2>
+</div>
+
+<div class="charts-grid">
+    
+    <div class="chart-card large">
+        <div class="chart-header">
+            <h3 class="chart-title">Stan Floty (Procentowy)</h3>
+        </div>
+        <div class="chart-placeholder" style="min-height: 250px; padding: 20px; display: block; color: #1F2937;">
+             <div style="margin-bottom: 15px;">
+                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                     <span>Dostępne (@dostepne)</span>
+                     <span>@ObliczProcent(dostepne)%</span>
+                 </div>
+                 <div class="progress-bar" style="width: 100%;"><div class="progress-fill" style="width: @ObliczProcent(dostepne)%; background: #10B981;"></div></div>
+             </div>
+
+             <div style="margin-bottom: 15px;">
+                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                     <span>W Trasie (@wTrasie)</span>
+                     <span>@ObliczProcent(wTrasie)%</span>
+                 </div>
+                 <div class="progress-bar" style="width: 100%;"><div class="progress-fill" style="width: @ObliczProcent(wTrasie)%; background: #F59E0B;"></div></div>
+             </div>
+
+             <div style="margin-bottom: 15px;">
+                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                     <span>W Serwisie (@wSerwisie)</span>
+                     <span>@ObliczProcent(wSerwisie)%</span>
+                 </div>
+                 <div class="progress-bar" style="width: 100%;"><div class="progress-fill" style="width: @ObliczProcent(wSerwisie)%; background: #EF4444;"></div></div>
+             </div>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">Podsumowanie Zasobów</h3>
+        </div>
+        <div class="chart-placeholder" style="min-height: 200px; display: flex; flex-direction: column; justify-content: center; gap: 20px;">
+             <div class="stat-item" style="text-align: center;">
+                 <div style="font-size: 36px; font-weight: bold; color: #0052CC;">@sumaPojazdow</div>
+                 <div style="color: #6B7280;">Wszystkich Pojazdów</div>
+             </div>
+             <div class="stat-item" style="text-align: center;">
+                 <div style="font-size: 36px; font-weight: bold; color: #4B5563;">@liczbaKierowcow</div>
+                 <div style="color: #6B7280;">Zatrudnionych Kierowców</div>
+             </div>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">Łączny Przebieg Floty</h3>
+        </div>
+        <div class="chart-placeholder" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+             <div style="text-align: center;">
+                 <div style="font-size: 42px; font-weight: 800; color: #1F2937;">
+                     @(lacznyPrzebieg.ToString("N0")) <span style="font-size: 16px; color: #9CA3AF;">km</span>
+                 </div>
+                 <div style="margin-top: 10px; font-size: 14px; color: #059669;">
+                     + Średnio @(sumaPojazdow > 0 ? (lacznyPrzebieg/sumaPojazdow).ToString("N0") : "0") km na pojazd
+                 </div>
+             </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    int sumaPojazdow = 0;
+    int dostepne = 0;
+    int wTrasie = 0;
+    int wSerwisie = 0;
+    int liczbaKierowcow = 0;
+    decimal lacznyPrzebieg = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var pojazdy = await PojazdSerwis.PobierzWszystkieAsync();
+        var kierowcy = await KierowcaSerwis.PobierzWszystkichAsync();
+
+        sumaPojazdow = pojazdy.Count;
+        liczbaKierowcow = kierowcy.Count;
+        
+        if (sumaPojazdow > 0)
+        {
+            dostepne = pojazdy.Count(p => p.Status == StatusPojazdu.Dostepny);
+            wTrasie = pojazdy.Count(p => p.Status == StatusPojazdu.WUzytkowaniu);
+            wSerwisie = pojazdy.Count(p => p.Status == StatusPojazdu.WSerwisie);
+            lacznyPrzebieg = pojazdy.Sum(p => p.Przebieg);
+        }
+    }
+
+    private double ObliczProcent(int wartosc)
+    {
+        if (sumaPojazdow == 0) return 0;
+        return Math.Round((double)wartosc / sumaPojazdow * 100, 1);
+    }
+}
