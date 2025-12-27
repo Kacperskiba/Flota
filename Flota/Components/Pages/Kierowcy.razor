@@ -2,6 +2,7 @@
 @using Flota.Domain.Entities
 @using Flota.Domain.Interfaces
 @inject IKierowcaSerwis KierowcaSerwis
+@inject IJSRuntime JS
 @rendermode RenderMode.InteractiveServer
 
 <div class="section-header">
@@ -41,6 +42,17 @@
                 <InputText @bind-Value="nowyKierowca.NrTelefonu" class="form-input" placeholder="+48 123 456 789" />
             </div>
         </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Adres (Opcjonalnie)</label>
+                <InputText @bind-Value="nowyKierowca.Adres" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Lata Doświadczenia</label>
+                <InputNumber @bind-Value="nowyKierowca.LataDoswiadczenia" class="form-input" />
+            </div>
+        </div>
 
         <div class="form-actions">
             <button type="button" class="btn-secondary" @onclick="WyczyscFormularz">Wyczyść</button>
@@ -62,17 +74,18 @@
             <tr>
                 <th>Imię i Nazwisko</th>
                 <th>Nr Prawa Jazdy</th>
-                <th>Telefon</th>
-            </tr>
+                <th>Kontakt</th>
+                <th>Doświadczenie</th>
+                <th>Akcje</th> </tr>
         </thead>
         <tbody>
             @if (kierowcy == null)
             {
-                <tr><td colspan="3">Ładowanie...</td></tr>
+                <tr><td colspan="5">Ładowanie...</td></tr>
             }
             else if (!kierowcy.Any())
             {
-                <tr><td colspan="3">Brak kierowców w bazie.</td></tr>
+                <tr><td colspan="5">Brak kierowców w bazie.</td></tr>
             }
             else
             {
@@ -81,7 +94,16 @@
                     <tr>
                         <td><div style="font-weight: 600;">@k.Imie @k.Nazwisko</div></td>
                         <td>@k.NumerPrawaJazdy</td>
-                        <td>@(k.NrTelefonu ?? "-")</td>
+                        <td>
+                            @if(!string.IsNullOrEmpty(k.NrTelefonu)) { <div>📞 @k.NrTelefonu</div> }
+                            @if(!string.IsNullOrEmpty(k.Email)) { <div>✉️ @k.Email</div> }
+                        </td>
+                        <td>@k.LataDoswiadczenia lat</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" @onclick="() => UsunKierowce(k.Id)">
+                                Usuń
+                            </button>
+                        </td>
                     </tr>
                 }
             }
@@ -108,10 +130,9 @@
     {
         await KierowcaSerwis.DodajAsync(nowyKierowca);
         pokazSukces = true;
-        nowyKierowca = new Kierowca(); // Reset formularza
-        await ZaladujListe(); // Odśwież listę
+        nowyKierowca = new Kierowca();
+        await ZaladujListe();
         
-        // Ukryj komunikat po 3 sekundach
         await Task.Delay(3000);
         pokazSukces = false;
         StateHasChanged();
@@ -121,5 +142,15 @@
     {
         nowyKierowca = new Kierowca();
         pokazSukces = false;
+    }
+    private async Task UsunKierowce(int id)
+    {
+        bool potwierdzenie = await JS.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć tego kierowcę? Tej operacji nie można cofnąć.");
+        
+        if (potwierdzenie)
+        {
+            await KierowcaSerwis.UsunAsync(id);
+            await ZaladujListe();
+        }
     }
 }

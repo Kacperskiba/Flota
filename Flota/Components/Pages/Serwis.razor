@@ -6,12 +6,13 @@
 @rendermode RenderMode.InteractiveServer
 
 <div class="section-header">
-    <h2 class="section-title">Serwis i Naprawy</h2>
+    <h2 class="section-title">Centrum Serwisowe</h2>
 </div>
 
 <div class="form-container" style="margin-bottom: 32px;">
     <div class="form-header">
-        <h2 class="form-title">Zgłoś Usterkę / Przegląd</h2>
+        <h2 class="form-title">Nowe Zgłoszenie</h2>
+        <p class="form-subtitle">Dodanie zgłoszenia automatycznie zmieni status pojazdu na "W Serwisie"</p>
     </div>
 
     <EditForm Model="@noweZgloszenie" OnValidSubmit="DodajZgloszenie">
@@ -48,23 +49,15 @@
                 <label class="form-label">Szacowany Koszt (PLN)</label>
                 <InputNumber @bind-Value="noweZgloszenie.Koszt" class="form-input" />
             </div>
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <InputSelect @bind-Value="noweZgloszenie.Status" class="form-input">
-                    <option value="W Trakcie">W Trakcie</option>
-                    <option value="Zakończone">Zakończone</option>
-                    <option value="Planowane">Planowane</option>
-                </InputSelect>
-            </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Dodaj Zgłoszenie</button>
+            <button type="submit" class="btn-primary">Utwórz Zgłoszenie</button>
         </div>
         
         @if (pokazSukces)
         {
-            <div class="alert alert-success mt-3">Zgłoszenie dodane!</div>
+            <div class="alert alert-success mt-3">Zgłoszenie dodane! Pojazd oznaczony jako W Serwisie.</div>
         }
     </EditForm>
 </div>
@@ -74,11 +67,10 @@
         <thead>
             <tr>
                 <th>Pojazd</th>
-                <th>Opis</th>
+                <th>Opis Usterki</th>
                 <th>Data</th>
                 <th>Koszt</th>
-                <th>Status</th>
-            </tr>
+                <th>Zmień Status</th> </tr>
         </thead>
         <tbody>
             @if (zgloszenia == null) { <tr><td colspan="5">Ładowanie...</td></tr> }
@@ -86,15 +78,24 @@
             {
                 @foreach (var z in zgloszenia)
                 {
-                    <tr>
-                        <td><strong>@z.Pojazd?.Marka</strong> <small>@z.Pojazd?.NumerRejestracyjny</small></td>
+                    // Stylizacja wiersza, jeśli zakończone to lekko szary
+                    <tr style="@(z.Status == "Zakończone" ? "opacity: 0.6; background: #f9fafb;" : "")">
+                        <td>
+                            <strong>@z.Pojazd?.Marka</strong> <br/>
+                            <small>@z.Pojazd?.NumerRejestracyjny</small>
+                        </td>
                         <td>@z.Opis</td>
                         <td>@z.DataZgloszenia.ToShortDateString()</td>
                         <td>@z.Koszt.ToString("C")</td>
                         <td>
-                            <span class="@(z.Status == "Zakończone" ? "status-badge available" : "status-badge maintenance")">
-                                @z.Status
-                            </span>
+                            <select class="form-select form-select-sm" 
+                                    style="width: 140px; border-color: @KolorRamki(z.Status);"
+                                    value="@z.Status" 
+                                    @onchange="@(e => ZmienStatus(z.Id, e?.ToString()))">
+                                <option value="W Trakcie">🛠️ W Trakcie</option>
+                                <option value="Planowane">📅 Planowane</option>
+                                <option value="Zakończone">✅ Zakończone</option>
+                            </select>
                         </td>
                     </tr>
                 }
@@ -127,10 +128,26 @@
         await SerwisService.DodajAsync(noweZgloszenie);
         pokazSukces = true;
         noweZgloszenie = new() { DataZgloszenia = DateTime.Now };
-        await ZaladujZgloszenia();
+        await ZaladujZgloszenia(); // Odświeżamy listę
         
         await Task.Delay(3000);
         pokazSukces = false;
         StateHasChanged();
     }
+
+    private async Task ZmienStatus(int id, string? nowyStatus)
+    {
+        if (string.IsNullOrEmpty(nowyStatus)) return;
+        
+        await SerwisService.ZmienStatusAsync(id, nowyStatus);
+        // Po zmianie statusu odświeżamy listę, żeby zaktualizować wygląd
+        await ZaladujZgloszenia(); 
+    }
+
+    private string KolorRamki(string status) => status switch
+    {
+        "Zakończone" => "#10B981", // Zielony
+        "W Trakcie" => "#F59E0B",  // Pomarańczowy
+        _ => "#E5E7EB"             // Szary
+    };
 }

@@ -12,6 +12,7 @@ public interface IPojazdSerwis {
 public interface IKierowcaSerwis {
     Task<List<Kierowca>> PobierzWszystkichAsync();
     Task DodajAsync(Kierowca k);
+    Task UsunAsync(int id);
 }
 
 public interface ITankowanieSerwis {
@@ -22,6 +23,7 @@ public interface ITankowanieSerwis {
 public interface ISerwisPojazduSerwis {
     Task<List<ZgloszenieSerwisowe>> PobierzWszystkieAsync();
     Task DodajAsync(ZgloszenieSerwisowe z);
+    Task ZmienStatusAsync(int id, string nowyStatus);
 }
 public interface IPrzydzialSerwis {
     Task<List<Przydzial>> PobierzAktywneAsync();
