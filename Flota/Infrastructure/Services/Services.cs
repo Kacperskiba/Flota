@@ -76,47 +76,75 @@ public class SerwisPojazduSerwis : ISerwisPojazduSerwis
     public async Task<List<ZgloszenieSerwisowe>> PobierzWszystkieAsync()
     {
         return await _context.ZgloszeniaSerwisowe
-            .Include(z => z.Pojazd)
+            .Include(z => z.Pojazd) // <--- WAŻNE: Musi pobierać pojazd
             .OrderByDescending(z => z.DataZgloszenia)
             .ToListAsync();
     }
 
     public async Task DodajAsync(ZgloszenieSerwisowe z)
     {
-        // Kiedy dodajemy zgłoszenie, auto automatycznie idzie "W Serwisie"
+        // 1. Walidacja: Jeśli próbujemy dodać serwis "W Trakcie", sprawdzamy czy auto już nie jest w serwisie
+        if (z.Status == "W Trakcie")
+        {
+            bool czyJuzWSerwisie = await _context.ZgloszeniaSerwisowe
+                .AnyAsync(x => x.PojazdId == z.PojazdId && x.Status == "W Trakcie");
+
+            if (czyJuzWSerwisie)
+            {
+                throw new Exception("To auto ma już aktywny serwis 'W Trakcie'! Zakończ poprzedni, zanim rozpoczniesz nowy.");
+            }
+        }
+
+        // 2. Pobieramy pojazd i zmieniamy mu status
         var pojazd = await _context.Pojazdy.FindAsync(z.PojazdId);
-        if (pojazd != null)
+    
+        if (pojazd != null && z.Status == "W Trakcie")
         {
             pojazd.Status = Domain.Enums.StatusPojazdu.WSerwisie;
         }
 
-        z.Status = "W Trakcie"; // Domyślny status
         _context.ZgloszeniaSerwisowe.Add(z);
         await _context.SaveChangesAsync();
     }
     public async Task ZmienStatusAsync(int id, string nowyStatus)
     {
+        // 1. Pobieramy zgłoszenie wraz z pojazdem
         var zgloszenie = await _context.ZgloszeniaSerwisowe
             .Include(z => z.Pojazd)
             .FirstOrDefaultAsync(z => z.Id == id);
 
         if (zgloszenie == null) return;
 
+        // 2. WALIDACJA (STRAŻNIK)
+        // Jeśli próbujemy ustawić status na "W Trakcie", sprawdzamy inne zgłoszenia
+        if (nowyStatus == "W Trakcie")
+        {
+            bool czyInnySerwisTrwa = await _context.ZgloszeniaSerwisowe
+                .AnyAsync(x => x.PojazdId == zgloszenie.PojazdId 
+                               && x.Id != id // Ignorujemy to zgłoszenie (choć ono jest Planowane)
+                               && x.Status == "W Trakcie");
+
+            if (czyInnySerwisTrwa)
+            {
+                throw new Exception("Nie można rozpocząć tego serwisu! To auto jest już w trakcie innej naprawy.");
+            }
+        }
+
+        // 3. Aktualizacja statusu zgłoszenia
         zgloszenie.Status = nowyStatus;
 
-        // LOGIKA AUTOMATYCZNEJ ZMIANY STATUSU POJAZDU
+        // 4. Automatyczna zmiana statusu POJAZDU
         if (zgloszenie.Pojazd != null)
         {
             if (nowyStatus == "Zakończone")
             {
-                // Jeśli naprawa skończona -> auto dostępne
                 zgloszenie.Pojazd.Status = Domain.Enums.StatusPojazdu.Dostepny;
             }
-            else if (nowyStatus == "W Trakcie" || nowyStatus == "Planowane")
+            else if (nowyStatus == "W Trakcie")
             {
-                // Jeśli naprawa trwa -> auto w serwisie
                 zgloszenie.Pojazd.Status = Domain.Enums.StatusPojazdu.WSerwisie;
             }
+            // Przy "Planowane" nie zmieniamy statusu pojazdu
         }
 
         await _context.SaveChangesAsync();
