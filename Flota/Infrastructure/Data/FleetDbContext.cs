@@ -12,7 +12,7 @@ public class FleetDbContext : DbContext
     public DbSet<Tankowanie> Tankowania { get; set; }
     
     public DbSet<ZgloszenieSerwisowe> ZgloszeniaSerwisowe { get; set; }
-    public DbSet<Przydzial> Przydzialy { get; set; } // <--- NOWA TABELA
+    public DbSet<Przydzial> Przydzialy { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) 
     {

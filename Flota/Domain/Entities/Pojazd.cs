@@ -34,5 +34,4 @@ public class Pojazd
 
     // Pola opcjonalne (zostawiamy je, bo mogą się przydać, ale nie są wymagane w Twoim nowym schemacie)
     public int? LiczbaMiejsc { get; set; }
-    public decimal? Ladownosc { get; set; }
 }
