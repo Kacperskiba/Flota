@@ -1,0 +1,8 @@
+﻿- Responsywne tankowanie
+- Wykresy itd raporty ulepszenie && dodanie raportów dla kierowców i dla pojazdów (może do pdf albo na app)
+- Serwisy zgodnie z diagramem
+- Przy zwrocie auta obliczanie paliwa
+- Sprawdzić czy jakieś pola są jeszcze potrzebne do danych
+- dodac wiecej danych przykładowych
+- wyłączenie auta z uzytku ( żeby sie wszystkie statusyPojazdu z diagramu zgadziały)
+- Ubezpieczenia 
