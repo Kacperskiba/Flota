@@ -1,0 +1,137 @@
+﻿@page "/protokol/{Id:int}"
+@using Flota.Domain.Entities
+@using Flota.Domain.Interfaces
+@inject IPrzydzialSerwis PrzydzialSerwis
+@inject IJSRuntime JS
+
+<div class="container dok-container">
+    @if (przydzial == null)
+    {
+        <div class="alert alert-info">Ładowanie dokumentu...</div>
+    }
+    else
+    {
+        <div class="text-center mb-5 mt-4">
+            <h2 class="fw-bold text-uppercase">Protokół Przekazania Pojazdu</h2>
+            <p class="text-muted">Nr systemowy: @przydzial.Id / @przydzial.DataRozpoczecia.Year</p>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-6">
+                <strong>Data wydania:</strong> @przydzial.DataRozpoczecia.ToString("dd.MM.yyyy HH:mm")<br />
+                <strong>Miejsce:</strong> Siedziba Firmy
+            </div>
+            <div class="col-6 text-end">
+                <button class="btn btn-primary d-print-none" @onclick="Drukuj">🖨️ Drukuj / Pobierz PDF</button>
+            </div>
+        </div>
+
+        <hr class="mb-4" />
+
+        <div class="row mb-5">
+            <div class="col-6">
+                <h5 class="border-bottom pb-2">Przekazujący (Firma):</h5>
+                <p>
+                    <strong>FlotaTrack Sp. z o.o.</strong><br/>
+                    ul. Transportowa 1<br/>
+                    00-001 Warszawa
+                </p>
+            </div>
+            <div class="col-6">
+                <h5 class="border-bottom pb-2">Odbierający (Kierowca):</h5>
+                <p>
+                    <strong>@przydzial.Kierowca?.PelneImie</strong><br/>
+                    Nr Prawa Jazdy: @przydzial.Kierowca?.NumerPrawaJazdy<br/>
+                    Tel: @przydzial.Kierowca?.NrTelefonu
+                </p>
+            </div>
+        </div>
+
+        <div class="card mb-5 border-dark">
+            <div class="card-header bg-light fw-bold border-dark">
+                Dane Pojazdu
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-4"><strong>Pojazd:</strong></div>
+                    <div class="col-8">@przydzial.Pojazd?.Marka @przydzial.Pojazd?.Model</div>
+                    
+                    <div class="col-4"><strong>Nr Rejestracyjny:</strong></div>
+                    <div class="col-8 fw-bold">@przydzial.Pojazd?.NumerRejestracyjny</div>
+
+                    <div class="col-4"><strong>Rok produkcji:</strong></div>
+                    <div class="col-8">@przydzial.Pojazd?.RokProdukcji</div>
+
+                    <div class="col-4"><strong>Stan Licznika:</strong></div>
+                    <div class="col-8">@przydzial.PrzebiegPoczatkowy km</div>
+                    
+                    <div class="col-4"><strong>Stan Paliwa:</strong></div>
+                    <div class="col-8">________________ / 100%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-5">
+            <h6 class="fw-bold">Oświadczenia:</h6>
+            <ol class="small text-muted">
+                <li>Odbierający oświadcza, że zapoznał się ze stanem technicznym pojazdu i nie wnosi do niego zastrzeżeń.</li>
+                <li>Pojazd jest czysty wewnątrz i na zewnątrz.</li>
+                <li>Wraz z pojazdem przekazano: Dowód rejestracyjny, Polisa OC, 1 kpl. kluczyków.</li>
+                <li>Kierowca zobowiązuje się do użytkowania pojazdu zgodnie z przeznaczeniem.</li>
+            </ol>
+        </div>
+
+        <div class="row mt-5 pt-5">
+            <div class="col-6 text-center">
+                <div style="border-top: 1px dashed black; width: 80%; margin: 0 auto; padding-top: 10px;">
+                    Podpis Przekazującego
+                </div>
+            </div>
+            <div class="col-6 text-center">
+                <div style="border-top: 1px dashed black; width: 80%; margin: 0 auto; padding-top: 10px;">
+                    Podpis Odbierającego (Kierowcy)
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Przydzial? przydzial;
+
+    protected override async Task OnInitializedAsync()
+    {
+        przydzial = await PrzydzialSerwis.PobierzPoIdAsync(Id);
+    }
+
+    private async Task Drukuj()
+    {
+        await JS.InvokeVoidAsync("print");
+    }
+}
+
+<style>
+    @@media print {
+        /* Ukryj elementy interfejsu aplikacji */
+        .sidebar, .top-row, .btn, .nav-scrollable { display: none !important; }
+        .page, main, .content { margin: 0 !important; padding: 0 !important; }
+        body { background-color: white; }
+        
+        /* Formatowanie dokumentu */
+        .dok-container { 
+            max-width: 100% !important; 
+            width: 100%;
+            border: none;
+        }
+    }
+    
+    /* Wygląd na ekranie */
+    .dok-container {
+        max-width: 800px;
+        background: white;
+        padding: 40px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        margin: 20px auto;
+    }
+</style>

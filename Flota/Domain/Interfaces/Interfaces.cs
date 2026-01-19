@@ -29,6 +29,7 @@ public interface IPrzydzialSerwis {
     Task<List<Przydzial>> PobierzAktywneAsync();
     Task<List<Przydzial>> PobierzHistorieAsync();
     Task WydajPojazdAsync(Przydzial p);
+    Task<Przydzial?> PobierzPoIdAsync(int id);
     Task ZwrocPojazdAsync(int przydzialId, decimal przebiegKoncowy, DateTime dataZwrotu);
 }
 public interface IUbezpieczenieSerwis {

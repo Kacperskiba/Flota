@@ -267,7 +267,15 @@ public class PrzydzialSerwis : IPrzydzialSerwis
 
         await _context.SaveChangesAsync();
     }
+    public async Task<Przydzial?> PobierzPoIdAsync(int id)
+    {
+        return await _context.Przydzialy
+            .Include(p => p.Pojazd)
+            .Include(p => p.Kierowca)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
 }
+
 public class HarmonogramSerwis : IHarmonogramSerwis
 {
     private readonly FleetDbContext _context;

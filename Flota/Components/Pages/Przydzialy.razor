@@ -5,119 +5,146 @@
 @inject IPrzydzialSerwis PrzydzialSerwis
 @inject IPojazdSerwis PojazdSerwis
 @inject IKierowcaSerwis KierowcaSerwis
+
 @rendermode RenderMode.InteractiveServer
 
-<div class="section-header">
-    <h2 class="section-title">Dyspozytornia (Przydziały)</h2>
-</div>
-
-<div class="form-container" style="margin-bottom: 32px;">
-    <div class="form-header">
-        <h2 class="form-title">Wydaj Pojazd</h2>
-        <p class="form-subtitle">Wybierz dostępny pojazd i przypisz kierowcę</p>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🔑 Dyspozytornia (Przydziały)</h2>
     </div>
 
-    @if (!string.IsNullOrEmpty(blad))
-    {
-        <div class="alert alert-danger">@blad</div>
-    }
-
-    <EditForm Model="@nowyPrzydzial" OnValidSubmit="WydajPojazd">
-        <DataAnnotationsValidator />
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Pojazd (Tylko dostępne)</label>
-                <InputSelect @bind-Value="nowyPrzydzial.PojazdId" class="form-input">
-                    <option value="0">-- Wybierz Pojazd --</option>
-                    @if (dostepnePojazdy != null)
-                    {
-                        foreach (var p in dostepnePojazdy)
-                        {
-                            <option value="@p.Id">@p.Marka @p.Model (@p.NumerRejestracyjny)</option>
-                        }
-                    }
-                </InputSelect>
-            </div>
+    <div class="card shadow-sm mb-5 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Wydaj Pojazd</h5>
+        </div>
+        <div class="card-body">
             
-            <div class="form-group">
-                <label class="form-label">Kierowca</label>
-                <InputSelect @bind-Value="nowyPrzydzial.KierowcaId" class="form-input">
-                    <option value="0">-- Wybierz Kierowcę --</option>
-                    @if (kierowcy != null)
+            @if (!string.IsNullOrEmpty(blad))
+            {
+                <div class="alert alert-danger">@blad</div>
+            }
+
+            <EditForm Model="@nowyPrzydzial" OnValidSubmit="WydajPojazd">
+                <DataAnnotationsValidator />
+                
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label">Pojazd (Tylko dostępne)</label>
+                        <InputSelect @bind-Value="nowyPrzydzial.PojazdId" class="form-select">
+                            <option value="0">-- Wybierz Pojazd --</option>
+                            @if (dostepnePojazdy != null)
+                            {
+                                foreach (var p in dostepnePojazdy)
+                                {
+                                    <option value="@p.Id">@p.Marka @p.Model (@p.NumerRejestracyjny)</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                    
+                    <div class="col-md-5">
+                        <label class="form-label">Kierowca</label>
+                        <InputSelect @bind-Value="nowyPrzydzial.KierowcaId" class="form-select">
+                            <option value="0">-- Wybierz Kierowcę --</option>
+                            @if (kierowcy != null)
+                            {
+                                foreach (var k in kierowcy)
+                                {
+                                    <option value="@k.Id">@k.PelneImie (@k.NumerPrawaJazdy)</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary">Wydaj Kluczyki</button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Pojazdy w Trasie (Aktywne)</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Pojazd</th>
+                        <th>Kierowca</th>
+                        <th>Data Wydania</th>
+                        <th>Stan Licznika (Start)</th>
+                        <th style="width: 250px;">Akcja</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (aktywnePrzydzialy == null)
                     {
-                        foreach (var k in kierowcy)
+                        <tr><td colspan="5" class="text-center p-3">Ładowanie...</td></tr>
+                    }
+                    else if (!aktywnePrzydzialy.Any())
+                    {
+                        <tr><td colspan="5" class="text-center p-3">Wszystkie auta są w bazie. Brak aktywnych tras.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var p in aktywnePrzydzialy)
                         {
-                            <option value="@k.Id">@k.PelneImie</option>
+                            <tr>
+                                <td>
+                                    <strong>@p.Pojazd.Marka @p.Pojazd.Model</strong> <br/>
+                                    <small class="text-muted">@p.Pojazd.NumerRejestracyjny</small>
+                                </td>
+                                <td>@p.Kierowca.PelneImie</td>
+                                <td>@p.DataRozpoczecia.ToString("g")</td>
+                                <td>@p.PrzebiegPoczatkowy.ToString("N0") km</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        
+                                        <a href="/protokol/@p.Id" target="_blank" class="btn btn-outline-secondary btn-sm me-2" title="Drukuj Protokół">
+                                            🖨️
+                                        </a>
+
+                                        @if (idDoZwrotu == p.Id)
+                                        {
+                                            // Tryb edycji (Wpisywanie przebiegu)
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" @bind="przebiegPrzyZwrocie" class="form-control" placeholder="Nowy przebieg" />
+                                                <button class="btn btn-success" @onclick="() => ZatwierdzZwrot(p.Id)">OK</button>
+                                                <button class="btn btn-secondary" @onclick="AnulujZwrot">X</button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            // Zwykły przycisk
+                                            <button class="btn btn-warning btn-sm text-dark fw-bold" @onclick="() => PrzygotujZwrot(p.Id, p.Pojazd.Przebieg)">
+                                                Zwróć
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
                         }
                     }
-                </InputSelect>
-            </div>
+                </tbody>
+            </table>
         </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn-primary">Wydaj Pojazd</button>
-        </div>
-    </EditForm>
-</div>
-
-<div class="section-header">
-    <h3 class="section-title">Pojazdy w Trasie (Aktywne)</h3>
-</div>
-
-<div class="data-table">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Pojazd</th>
-                <th>Kierowca</th>
-                <th>Data Wydania</th>
-                <th>Stan Licznika (Start)</th>
-                <th>Akcja</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (aktywnePrzydzialy == null) { <tr><td colspan="5">Ładowanie...</td></tr> }
-            else if (!aktywnePrzydzialy.Any()) { <tr><td colspan="5">Brak pojazdów w trasie.</td></tr> }
-            else
-            {
-                @foreach (var p in aktywnePrzydzialy)
-                {
-                    <tr>
-                        <td><strong>@p.Pojazd.Marka @p.Pojazd.Model</strong> <br/><small>@p.Pojazd.NumerRejestracyjny</small></td>
-                        <td>@p.Kierowca.PelneImie</td>
-                        <td>@p.DataRozpoczecia.ToString("g")</td>
-                        <td>@p.PrzebiegPoczatkowy km</td>
-                        <td>
-                            @if (idDoZwrotu == p.Id)
-                            {
-                                <div style="display:flex; gap:5px; align-items:center;">
-                                    <input type="number" @bind="przebiegPrzyZwrocie" class="form-control form-control-sm" placeholder="Nowy przebieg" style="width: 100px;" />
-                                    <button class="btn btn-success btn-sm" @onclick="() => ZatwierdzZwrot(p.Id)">OK</button>
-                                    <button class="btn btn-secondary btn-sm" @onclick="AnulujZwrot">X</button>
-                                </div>
-                            }
-                            else
-                            {
-                                <button class="btn btn-warning btn-sm" @onclick="() => PrzygotujZwrot(p.Id, p.Pojazd.Przebieg)">Zwróć</button>
-                            }
-                        </td>
-                    </tr>
-                }
-            }
-        </tbody>
-    </table>
+    </div>
 </div>
 
 @code {
     private Przydzial nowyPrzydzial = new();
+    
+    // Listy danych
     private List<Pojazd>? dostepnePojazdy;
     private List<Kierowca>? kierowcy;
     private List<Przydzial>? aktywnePrzydzialy;
     
     private string blad = "";
     
-    // Zmienne do obsługi zwrotu
+    // Zmienne do obsługi zwrotu (Inline Editing)
     private int? idDoZwrotu = null;
     private decimal przebiegPrzyZwrocie;
 
@@ -128,11 +155,14 @@
 
     private async Task ZaladujDane()
     {
-        // Pobieramy TYLKO dostępne pojazdy do listy rozwijanej
+        // 1. Pobieramy wszystkie pojazdy i filtrujemy tylko dostępne
         var wszystkie = await PojazdSerwis.PobierzWszystkieAsync();
         dostepnePojazdy = wszystkie.Where(p => p.Status == StatusPojazdu.Dostepny).ToList();
         
+        // 2. Pobieramy kierowców
         kierowcy = await KierowcaSerwis.PobierzWszystkichAsync();
+        
+        // 3. Pobieramy aktywne przydziały (te, co są w trasie)
         aktywnePrzydzialy = await PrzydzialSerwis.PobierzAktywneAsync();
     }
 
@@ -141,27 +171,30 @@
         blad = "";
         if (nowyPrzydzial.PojazdId == 0 || nowyPrzydzial.KierowcaId == 0)
         {
-            blad = "Wybierz pojazd i kierowcę.";
+            blad = "Musisz wybrać pojazd i kierowcę!";
             return;
         }
 
         try
         {
             await PrzydzialSerwis.WydajPojazdAsync(nowyPrzydzial);
-            nowyPrzydzial = new(); // Reset
-            await ZaladujDane(); // Odśwież listy (auto zniknie z dostępnych, pojawi się w aktywnych)
+            
+            // Reset formularza i odświeżenie danych
+            nowyPrzydzial = new(); 
+            await ZaladujDane();
         }
         catch (Exception ex)
         {
-            blad = ex.Message;
+            blad = $"Błąd: {ex.Message}";
         }
     }
 
-    // Logika UI dla zwrotu
+    // --- LOGIKA ZWROTU ---
+
     private void PrzygotujZwrot(int id, decimal aktualnyPrzebieg)
     {
         idDoZwrotu = id;
-        przebiegPrzyZwrocie = aktualnyPrzebieg; // Podpowiadamy aktualny przebieg
+        przebiegPrzyZwrocie = aktualnyPrzebieg; // Podpowiadamy aktualny przebieg z bazy
     }
 
     private void AnulujZwrot()
@@ -171,8 +204,11 @@
 
     private async Task ZatwierdzZwrot(int id)
     {
+        // Tutaj przekazujemy nowy przebieg do serwisu.
+        // Serwis zamknie przydział ORAZ zaktualizuje licznik w pojeździe.
         await PrzydzialSerwis.ZwrocPojazdAsync(id, przebiegPrzyZwrocie, DateTime.Now);
+        
         idDoZwrotu = null;
-        await ZaladujDane(); // Auto wróci do dostępnych
+        await ZaladujDane(); // Auto zniknie z tej listy, a pojawi się w dostępnych
     }
 }
