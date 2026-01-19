@@ -6,3 +6,4 @@
 - dodac wiecej danych przykładowych
 - wyłączenie auta z uzytku ( żeby sie wszystkie statusyPojazdu z diagramu zgadziały)
 - Ubezpieczenia 
+- przeglady
