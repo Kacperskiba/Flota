@@ -1,7 +1,7 @@
 ﻿@page "/serwis"
 @using Flota.Domain.Entities
 @using Flota.Domain.Interfaces
-@inject ISerwisPojazduSerwis SerwisService
+@inject ISerwisPojazdu SerwisService
 @inject IPojazdSerwis PojazdSerwis
 @inject IJSRuntime JS
 @rendermode RenderMode.InteractiveServer
@@ -126,9 +126,9 @@
 </div>
 
 @code {
-    private List<ZgloszenieSerwisowe>? zgloszenia;
+    private List<WpisSerwisowy>? zgloszenia;
     private List<Pojazd>? listaPojazdow;
-    private ZgloszenieSerwisowe noweZgloszenie = new() { DataZgloszenia = DateTime.Now, Status = "Planowane" };
+    private WpisSerwisowy noweZgloszenie = new() { DataZgloszenia = DateTime.Now, Status = "Planowane" };
     private bool pokazSukces = false;
     private string blad = ""; // <--- ZMIENNA NA BŁĄD
 

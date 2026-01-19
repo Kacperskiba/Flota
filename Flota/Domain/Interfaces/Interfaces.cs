@@ -20,9 +20,9 @@ public interface ITankowanieSerwis {
     Task DodajAsync(Tankowanie t);
 }
 
-public interface ISerwisPojazduSerwis {
-    Task<List<ZgloszenieSerwisowe>> PobierzWszystkieAsync();
-    Task DodajAsync(ZgloszenieSerwisowe z);
+public interface ISerwisPojazdu {
+    Task<List<WpisSerwisowy>> PobierzWszystkieAsync();
+    Task DodajAsync(WpisSerwisowy z);
     Task ZmienStatusAsync(int id, string nowyStatus);
 }
 public interface IPrzydzialSerwis {
@@ -30,4 +30,10 @@ public interface IPrzydzialSerwis {
     Task<List<Przydzial>> PobierzHistorieAsync();
     Task WydajPojazdAsync(Przydzial p);
     Task ZwrocPojazdAsync(int przydzialId, decimal przebiegKoncowy, DateTime dataZwrotu);
+}
+public interface IUbezpieczenieSerwis {
+    Task<List<Ubezpieczenie>> PobierzDlaPojazduAsync(int pojazdId);
+    Task DodajAsync(Ubezpieczenie u);
+    Task UsunAsync(int id);
+    Task<List<Ubezpieczenie>> PobierzWygasajaceAsync(int dni);
 }

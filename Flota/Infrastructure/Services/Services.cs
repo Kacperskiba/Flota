@@ -67,26 +67,63 @@ public class TankowanieSerwis : ITankowanieSerwis
         await _context.SaveChangesAsync();
     }
 }
-
-public class SerwisPojazduSerwis : ISerwisPojazduSerwis
+public class UbezpieczenieSerwis : IUbezpieczenieSerwis
 {
     private readonly FleetDbContext _context;
-    public SerwisPojazduSerwis(FleetDbContext context) { _context = context; }
+    public UbezpieczenieSerwis(FleetDbContext context) { _context = context; }
 
-    public async Task<List<ZgloszenieSerwisowe>> PobierzWszystkieAsync()
+    public async Task<List<Ubezpieczenie>> PobierzDlaPojazduAsync(int pojazdId)
     {
-        return await _context.ZgloszeniaSerwisowe
+        return await _context.Ubezpieczenia
+            .Where(u => u.PojazdId == pojazdId)
+            .OrderByDescending(u => u.DataZakonczenia)
+            .ToListAsync();
+    }
+
+    public async Task DodajAsync(Ubezpieczenie u)
+    {
+        _context.Ubezpieczenia.Add(u);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UsunAsync(int id)
+    {
+        var ubezp = await _context.Ubezpieczenia.FindAsync(id);
+        if (ubezp != null)
+        {
+            _context.Ubezpieczenia.Remove(ubezp);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task<List<Ubezpieczenie>> PobierzWygasajaceAsync(int dni)
+    {
+        var dataGraniczna = DateTime.Now.AddDays(dni);
+        return await _context.Ubezpieczenia
+            .Include(u => u.Pojazd) // Żebyśmy wiedzieli, jakiego auta to dotyczy
+            .Where(u => u.DataZakonczenia >= DateTime.Now && u.DataZakonczenia <= dataGraniczna)
+            .ToListAsync();
+    }
+}
+public class SerwisPojazdu : ISerwisPojazdu
+{
+    private readonly FleetDbContext _context;
+    public SerwisPojazdu(FleetDbContext context) { _context = context; }
+
+    public async Task<List<WpisSerwisowy>> PobierzWszystkieAsync()
+    {
+        return await _context.WpisSerwisowy
             .Include(z => z.Pojazd) // <--- WAŻNE: Musi pobierać pojazd
             .OrderByDescending(z => z.DataZgloszenia)
             .ToListAsync();
     }
 
-    public async Task DodajAsync(ZgloszenieSerwisowe z)
+    public async Task DodajAsync(WpisSerwisowy z)
     {
         // 1. Walidacja: Jeśli próbujemy dodać serwis "W Trakcie", sprawdzamy czy auto już nie jest w serwisie
         if (z.Status == "W Trakcie")
         {
-            bool czyJuzWSerwisie = await _context.ZgloszeniaSerwisowe
+            bool czyJuzWSerwisie = await _context.WpisSerwisowy
                 .AnyAsync(x => x.PojazdId == z.PojazdId && x.Status == "W Trakcie");
 
             if (czyJuzWSerwisie)
@@ -103,13 +140,13 @@ public class SerwisPojazduSerwis : ISerwisPojazduSerwis
             pojazd.Status = Domain.Enums.StatusPojazdu.WSerwisie;
         }
 
-        _context.ZgloszeniaSerwisowe.Add(z);
+        _context.WpisSerwisowy.Add(z);
         await _context.SaveChangesAsync();
     }
     public async Task ZmienStatusAsync(int id, string nowyStatus)
     {
         // 1. Pobieramy zgłoszenie wraz z pojazdem
-        var zgloszenie = await _context.ZgloszeniaSerwisowe
+        var zgloszenie = await _context.WpisSerwisowy
             .Include(z => z.Pojazd)
             .FirstOrDefaultAsync(z => z.Id == id);
 
@@ -119,7 +156,7 @@ public class SerwisPojazduSerwis : ISerwisPojazduSerwis
         // Jeśli próbujemy ustawić status na "W Trakcie", sprawdzamy inne zgłoszenia
         if (nowyStatus == "W Trakcie")
         {
-            bool czyInnySerwisTrwa = await _context.ZgloszeniaSerwisowe
+            bool czyInnySerwisTrwa = await _context.WpisSerwisowy
                 .AnyAsync(x => x.PojazdId == zgloszenie.PojazdId 
                                && x.Id != id // Ignorujemy to zgłoszenie (choć ono jest Planowane)
                                && x.Status == "W Trakcie");

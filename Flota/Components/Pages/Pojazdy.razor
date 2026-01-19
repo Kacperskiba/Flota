@@ -3,7 +3,8 @@
 @using Flota.Domain.Enums
 @using Flota.Domain.Interfaces
 @inject IPojazdSerwis PojazdSerwis
-@inject IJSRuntime JS 
+@inject IJSRuntime JS
+@inject NavigationManager NavManager 
 
 @rendermode RenderMode.InteractiveServer
 
@@ -66,7 +67,8 @@
                 <th>Rejestracja</th>
                 <th>Specyfikacja</th>
                 <th>Status</th>
-                <th>Akcje</th> </tr>
+                <th>Akcje</th> 
+            </tr>
         </thead>
         <tbody>
             @if (pojazdy == null) { <tr><td colspan="5">Ładowanie...</td></tr> }
@@ -84,6 +86,10 @@
                             </span>
                         </td>
                         <td>
+                            <button class="btn btn-primary btn-sm" @onclick="() => PrzejdzDoSzczegolow(p.Id)" style="margin-right: 8px;">
+                                Szczegóły
+                            </button>
+
                             <button class="btn btn-danger btn-sm" @onclick="() => UsunPojazd(p.Id)">
                                 Usuń
                             </button>
@@ -117,7 +123,12 @@
         await ZaladujPojazdy();
     }
 
-    // Logika usuwania z potwierdzeniem
+    // Nowa metoda do obsługi kliknięcia przycisku
+    private void PrzejdzDoSzczegolow(int id)
+    {
+        NavManager.NavigateTo($"/pojazdy/{id}");
+    }
+
     private async Task UsunPojazd(int id)
     {
         bool potwierdzenie = await JS.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć ten pojazd? Tej operacji nie można cofnąć.");
@@ -125,7 +136,7 @@
         if (potwierdzenie)
         {
             await PojazdSerwis.UsunAsync(id);
-            await ZaladujPojazdy(); // Odśwież listę, żeby zniknął
+            await ZaladujPojazdy();
         }
     }
 }

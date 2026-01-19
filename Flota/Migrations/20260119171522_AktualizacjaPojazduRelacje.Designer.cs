@@ -4,6 +4,7 @@ using Flota.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Flota.Migrations
 {
     [DbContext(typeof(FleetDbContext))]
-    partial class FleetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119171522_AktualizacjaPojazduRelacje")]
+    partial class AktualizacjaPojazduRelacje
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -176,43 +179,6 @@ namespace Flota.Migrations
                     b.ToTable("Tankowania");
                 });
 
-            modelBuilder.Entity("Flota.Domain.Entities.Ubezpieczenie", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DataRozpoczecia")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DataZakonczenia")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Koszt")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("NumerPolisy")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("PojazdId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Ubezpieczyciel")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PojazdId");
-
-                    b.ToTable("Ubezpieczenia");
-                });
-
             modelBuilder.Entity("Flota.Domain.Entities.WpisSerwisowy", b =>
                 {
                     b.Property<int>("Id")
@@ -242,7 +208,7 @@ namespace Flota.Migrations
 
                     b.HasIndex("PojazdId");
 
-                    b.ToTable("WpisSerwisowy");
+                    b.ToTable("ZgloszeniaSerwisowe");
                 });
 
             modelBuilder.Entity("Flota.Domain.Entities.Przydzial", b =>
@@ -275,17 +241,6 @@ namespace Flota.Migrations
                     b.Navigation("Pojazd");
                 });
 
-            modelBuilder.Entity("Flota.Domain.Entities.Ubezpieczenie", b =>
-                {
-                    b.HasOne("Flota.Domain.Entities.Pojazd", "Pojazd")
-                        .WithMany("Ubezpieczenie")
-                        .HasForeignKey("PojazdId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Pojazd");
-                });
-
             modelBuilder.Entity("Flota.Domain.Entities.WpisSerwisowy", b =>
                 {
                     b.HasOne("Flota.Domain.Entities.Pojazd", "Pojazd")
@@ -302,8 +257,6 @@ namespace Flota.Migrations
                     b.Navigation("Przydzialy");
 
                     b.Navigation("Tankowania");
-
-                    b.Navigation("Ubezpieczenie");
 
                     b.Navigation("ZgloszeniaSerwisowe");
                 });

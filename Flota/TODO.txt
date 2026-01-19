@@ -1,4 +1,5 @@
-﻿- Responsywne tankowanie
+﻿
+- Responsywne tankowanie
 - Wykresy itd raporty ulepszenie && dodanie raportów dla kierowców i dla pojazdów (może do pdf albo na app)
 - Serwisy zgodnie z diagramem
 - Przy zwrocie auta obliczanie paliwa

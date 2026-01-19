@@ -10,8 +10,9 @@ public class FleetDbContext : DbContext
     public DbSet<Pojazd> Pojazdy { get; set; }
     public DbSet<Kierowca> Kierowcy { get; set; }
     public DbSet<Tankowanie> Tankowania { get; set; }
+    public DbSet<Ubezpieczenie> Ubezpieczenia { get; set; }
     
-    public DbSet<ZgloszenieSerwisowe> ZgloszeniaSerwisowe { get; set; }
+    public DbSet<WpisSerwisowy> WpisSerwisowy { get; set; }
     public DbSet<Przydzial> Przydzialy { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) 
