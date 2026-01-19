@@ -1,208 +1,203 @@
 ﻿@page "/serwis"
 @using Flota.Domain.Entities
 @using Flota.Domain.Interfaces
-@inject ISerwisPojazdu SerwisService
+@inject ISerwisPojazdu SerwisPojazdu
 @inject IPojazdSerwis PojazdSerwis
-@inject IJSRuntime JS
+@inject IHarmonogramSerwis HarmonogramSerwis
+@inject NavigationManager NavManager
+
 @rendermode RenderMode.InteractiveServer
 
-<div class="section-header">
-    <h2 class="section-title">Centrum Serwisowe</h2>
-</div>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🛠️ Centrum Serwisowe</h2>
+        </div>
 
-<div class="form-container" style="margin-bottom: 32px;">
-    <div class="form-header">
-        <h2 class="form-title">Nowe Zgłoszenie</h2>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-warning h-100">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">⚠️ Aktualnie w naprawie</h5>
+                    <span class="badge bg-dark text-white">@autaWSerwisie.Count</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (autaWSerwisie.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var wpis in autaWSerwisie)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>@wpis.Pojazd.Marka @wpis.Pojazd.Model</strong> <br/>
+                                        <small class="text-muted">@wpis.Opis</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <small>Od: @wpis.DataZgloszenia.ToShortDateString()</small><br/>
+                                        <a href="/pojazdy/@wpis.PojazdId" class="btn btn-sm btn-outline-dark mt-1">Podgląd</a>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center text-muted">Brak aut w serwisie. Wszystkie sprawne! 🎉</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm border-danger h-100">
+                <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📅 Wymagane Przeglądy (Alerty)</h5>
+                    <span class="badge bg-white text-danger">@autaDoPrzegladu.Count</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (autaDoPrzegladu.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var alert in autaDoPrzegladu)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>@alert.Pojazd.Marka @alert.Pojazd.Model</strong> (@alert.Pojazd.NumerRejestracyjny)<br/>
+                                        <small class="text-danger fw-bold">Wymagany serwis!</small>
+                                    </div>
+                                    <a href="/pojazdy/@alert.Pojazd.Id" class="btn btn-sm btn-danger">Umów</a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center text-muted">Harmonogramy czyste. Żadne auto nie wymaga przeglądu.</div>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 
-    @if (!string.IsNullOrEmpty(blad))
-    {
-        <div class="alert alert-danger">
-            ⚠️ @blad
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Rejestr Zgłoszeń (Globalny)</h5>
         </div>
-    }
-
-    <EditForm Model="@noweZgloszenie" OnValidSubmit="DodajZgloszenie">
-        <DataAnnotationsValidator />
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Wybierz Pojazd</label>
-                <InputSelect @bind-Value="noweZgloszenie.PojazdId" class="form-input">
-                    <option value="0">-- Wybierz --</option>
-                    @if (listaPojazdow != null)
-                    {
-                        foreach (var p in listaPojazdow)
-                        {
-                            <option value="@p.Id">@p.Marka @p.Model (@p.NumerRejestracyjny)</option>
-                        }
-                    }
-                </InputSelect>
+        <div class="card-body">
+            
+            <div class="alert alert-secondary">
+                <small>💡 Aby dodać nowe zgłoszenie, najlepiej wejdź w <strong>Szczegóły Pojazdu</strong> lub użyj szybkiego formularza poniżej.</small>
             </div>
             
-            <div class="form-group">
-                <label class="form-label">Rodzaj Zgłoszenia</label>
-                <InputSelect @bind-Value="noweZgloszenie.Status" class="form-input">
-                    <option value="Planowane">Planowane</option>
-                    <option value="W Trakcie">W Trakcie</option>
-                </InputSelect>
+            <div class="row g-2 mb-4 align-items-end">
+                <div class="col-md-3">
+                    <label class="small">Pojazd</label>
+                    <InputSelect class="form-select" @bind-Value="noweZgloszenie.PojazdId">
+                        <option value="0">-- Wybierz --</option>
+                        @foreach(var p in pojazdy) { <option value="@p.Id">@p.Marka @p.Model</option> }
+                    </InputSelect>
+                </div>
+                <div class="col-md-4">
+                    <label class="small">Opis Usterki</label>
+                    <InputText class="form-control" @bind-Value="noweZgloszenie.Opis" placeholder="Co się zepsuło?" />
+                </div>
+                <div class="col-md-2">
+                    <label class="small">Data</label>
+                    <InputDate class="form-control" @bind-Value="noweZgloszenie.DataZgloszenia" />
+                </div>
+                <div class="col-md-2">
+                    <label class="small">Szacowany Koszt</label>
+                    <InputNumber class="form-control" @bind-Value="noweZgloszenie.Koszt" />
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-primary w-100" @onclick="DodajZgloszenie">+</button>
+                </div>
             </div>
-        </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Data Zgłoszenia</label>
-                <InputDate @bind-Value="noweZgloszenie.DataZgloszenia" class="form-input" />
-            </div>
-            <div class="form-group">
-                <label class="form-label">Szacowany Koszt (PLN)</label>
-                <InputNumber @bind-Value="noweZgloszenie.Koszt" class="form-input" />
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Opis Problemu / Zakres Prac</label>
-            <InputTextArea @bind-Value="noweZgloszenie.Opis" class="form-input" rows="3" />
-            <ValidationMessage For="@(() => noweZgloszenie.Opis)" class="text-danger small"/>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn-primary">Zapisz Zgłoszenie</button>
-        </div>
-        
-        @if (pokazSukces)
-        {
-            <div class="alert alert-success mt-3">Zgłoszenie zostało zapisane!</div>
-        }
-    </EditForm>
-</div>
-
-<div class="data-table">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Pojazd</th>
-                <th>Opis</th>
-                <th>Data</th>
-                <th>Status</th>
-                <th>Akcja</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (zgloszenia == null) { <tr><td colspan="5">Ładowanie...</td></tr> }
-            else
+            @if (wszystkieZgloszenia.Any())
             {
-                @foreach (var z in zgloszenia)
-                {
-                    <tr style="@(z.Status == "Zakończone" ? "opacity: 0.6; background: #f9fafb;" : "")">
-                        <td>
-                            <strong>@z.Pojazd?.Marka</strong> <br/>
-                            <small>@z.Pojazd?.NumerRejestracyjny</small>
-                        </td>
-                        <td>@z.Opis</td>
-                        <td>@z.DataZgloszenia.ToShortDateString()</td>
-                        <td>
-                            <span class="@KolorStatusu(z.Status)">@z.Status</span>
-                        </td>
-                        <td>
-                            @if (z.Status != "Zakończone")
-                            {
-                                <button class="btn btn-success btn-sm" @onclick="() => ZakonczSerwis(z.Id)">✅ Zakończ</button>
-                                @if (z.Status == "Planowane")
-                                {
-                                    <button class="btn btn-warning btn-sm ms-2" @onclick="() => RozpocznijSerwis(z.Id)">🛠️ Rozpocznij</button>
-                                }
-                            }
-                            else
-                            {
-                                <span class="text-muted"><small>Zamknięte</small></span>
-                            }
-                        </td>
-                    </tr>
-                }
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Pojazd</th>
+                            <th>Data</th>
+                            <th>Opis</th>
+                            <th>Status</th>
+                            <th>Koszt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var z in wszystkieZgloszenia)
+                        {
+                            <tr>
+                                <td>@z.Pojazd?.Marka @z.Pojazd?.Model</td>
+                                <td>@z.DataZgloszenia.ToShortDateString()</td>
+                                <td>@z.Opis</td>
+                                <td>
+                                    @if(z.Status == "Zakończone") { <span class="badge bg-success">Zakończone</span> }
+                                    else { <span class="badge bg-warning text-dark">W Trakcie</span> }
+                                </td>
+                                <td>@z.Koszt.ToString("C")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             }
-        </tbody>
-    </table>
+        </div>
+    </div>
 </div>
 
 @code {
-    private List<WpisSerwisowy>? zgloszenia;
-    private List<Pojazd>? listaPojazdow;
-    private WpisSerwisowy noweZgloszenie = new() { DataZgloszenia = DateTime.Now, Status = "Planowane" };
-    private bool pokazSukces = false;
-    private string blad = ""; // <--- ZMIENNA NA BŁĄD
+    // Listy danych
+    private List<WpisSerwisowy> wszystkieZgloszenia = new();
+    private List<WpisSerwisowy> autaWSerwisie = new(); // Te co mają status "W Trakcie"
+    private List<HarmonogramPrzegladow> autaDoPrzegladu = new(); // Te co mają alert = true
+    private List<Pojazd> pojazdy = new();
+
+    private WpisSerwisowy noweZgloszenie = new() { DataZgloszenia = DateTime.Now, Status = "W Trakcie" };
 
     protected override async Task OnInitializedAsync()
     {
-        listaPojazdow = await PojazdSerwis.PobierzWszystkieAsync();
-        await ZaladujZgloszenia();
+        await ZaladujDane();
     }
 
-    private async Task ZaladujZgloszenia()
+    private async Task ZaladujDane()
     {
-        zgloszenia = await SerwisService.PobierzWszystkieAsync();
+        pojazdy = await PojazdSerwis.PobierzWszystkieAsync();
+        var rawZgloszenia = await SerwisPojazdu.PobierzWszystkieAsync();
+        
+        // Sortujemy od najnowszych
+        wszystkieZgloszenia = rawZgloszenia.OrderByDescending(z => z.DataZgloszenia).ToList();
+
+        // Filtrujemy te, które są aktualnie naprawiane
+        autaWSerwisie = wszystkieZgloszenia.Where(z => z.Status != "Zakończone").ToList();
+
+        // SPRAWDZAMY HARMONOGRAMY (Nowa logika!)
+        autaDoPrzegladu = new List<HarmonogramPrzegladow>();
+        foreach (var p in pojazdy)
+        {
+            // Pomijamy wyłączone i te co już są w serwisie
+            if (p.Status == Flota.Domain.Enums.StatusPojazdu.Wylaczony || p.Status == Flota.Domain.Enums.StatusPojazdu.WSerwisie) 
+                continue;
+
+            var h = await HarmonogramSerwis.PobierzDlaPojazduAsync(p.Id);
+            if (h != null && h.CzyWymaganyPrzeglad(p.Przebieg))
+            {
+                // Musimy ręcznie przypisać pojazd, bo EF czasem nie ładuje relacji w górę przy prostym pobraniu
+                h.Pojazd = p; 
+                autaDoPrzegladu.Add(h);
+            }
+        }
     }
 
     private async Task DodajZgloszenie()
     {
-        blad = ""; // Czyścimy stary błąd
-        pokazSukces = false;
+        if (noweZgloszenie.PojazdId == 0) return;
 
-        if (noweZgloszenie.PojazdId == 0) 
-        {
-            blad = "Musisz wybrać pojazd!";
-            return;
-        }
-
-        try
-        {
-            await SerwisService.DodajAsync(noweZgloszenie);
-            
-            // Sukces
-            pokazSukces = true;
-            noweZgloszenie = new() { DataZgloszenia = DateTime.Now, Status = "Planowane" };
-            await ZaladujZgloszenia();
-            
-            await Task.Delay(3000);
-            pokazSukces = false;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            // Łapiemy błąd z backendu (ten o zduplikowanym serwisie)
-            blad = ex.Message;
-        }
+        noweZgloszenie.Status = "W Trakcie";
+        await SerwisPojazdu.DodajAsync(noweZgloszenie);
+        
+        // Reset
+        noweZgloszenie = new WpisSerwisowy { DataZgloszenia = DateTime.Now, Status = "W Trakcie" };
+        await ZaladujDane();
     }
-
-    private async Task ZakonczSerwis(int id)
-    {
-        bool potwierdz = await JS.InvokeAsync<bool>("confirm", "Czy na pewno chcesz zakończyć ten serwis?");
-        if (potwierdz)
-        {
-            await SerwisService.ZmienStatusAsync(id, "Zakończone");
-            await ZaladujZgloszenia();
-        }
-    }
-
-    private async Task RozpocznijSerwis(int id)
-    {
-        try 
-        {
-            await SerwisService.ZmienStatusAsync(id, "W Trakcie");
-            await ZaladujZgloszenia();
-        } 
-        catch (Exception ex) 
-        {
-            // Wyświetlamy błąd z backendu (że auto jest zajęte) w wyskakującym okienku
-            await JS.InvokeVoidAsync("alert", $"Błąd: {ex.Message}");
-        }
-    }
-
-    private string KolorStatusu(string status) => status switch
-    {
-        "Zakończone" => "status-badge available",
-        "W Trakcie" => "status-badge maintenance",
-        "Planowane" => "status-badge in-service",
-        _ => "status-badge"
-    };
 }

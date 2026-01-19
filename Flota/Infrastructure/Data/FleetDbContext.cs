@@ -13,6 +13,7 @@ public class FleetDbContext : DbContext
     public DbSet<Ubezpieczenie> Ubezpieczenia { get; set; }
     
     public DbSet<WpisSerwisowy> WpisSerwisowy { get; set; }
+    public DbSet<HarmonogramPrzegladow> Harmonogramy { get; set; }
     public DbSet<Przydzial> Przydzialy { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) 

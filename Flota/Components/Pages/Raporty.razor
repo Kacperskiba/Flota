@@ -1,109 +1,220 @@
-﻿@page "/raporty" // Zmieniłem link z "charts" na "raporty", żeby pasował do polskiego menu
+﻿@page "/raporty"
 @using Flota.Domain.Entities
-@using Flota.Domain.Enums
 @using Flota.Domain.Interfaces
 @inject IPojazdSerwis PojazdSerwis
-@inject IKierowcaSerwis KierowcaSerwis
+@inject ITankowanieSerwis TankowanieSerwis
+@inject ISerwisPojazdu SerwisPojazdu
+
 @rendermode RenderMode.InteractiveServer
 
-<div class="section-header">
-    <h2 class="section-title">Raporty i Analityka</h2>
-</div>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📊 Raporty i Analityka</h2>
+        <button class="btn btn-outline-primary" @onclick="ZaladujDane">🔄 Odśwież dane</button>
+    </div>
 
-<div class="charts-grid">
-    
-    <div class="chart-card large">
-        <div class="chart-header">
-            <h3 class="chart-title">Stan Floty (Procentowy)</h3>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-primary">
+                <div class="card-body text-center">
+                    <small class="text-muted">Łączne Koszty Floty</small>
+                    <h3 class="text-primary fw-bold">@LaczneKoszty.ToString("C0")</h3>
+                </div>
+            </div>
         </div>
-        <div class="chart-placeholder" style="min-height: 250px; padding: 20px; display: block; color: #1F2937;">
-             <div style="margin-bottom: 15px;">
-                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                     <span>Dostępne (@dostepne)</span>
-                     <span>@ObliczProcent(dostepne)%</span>
-                 </div>
-                 <div class="progress-bar" style="width: 100%;"><div class="progress-fill" style="width: @ObliczProcent(dostepne)%; background: #10B981;"></div></div>
-             </div>
-
-             <div style="margin-bottom: 15px;">
-                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                     <span>W Trasie (@wTrasie)</span>
-                     <span>@ObliczProcent(wTrasie)%</span>
-                 </div>
-                 <div class="progress-bar" style="width: 100%;"><div class="progress-fill" style="width: @ObliczProcent(wTrasie)%; background: #F59E0B;"></div></div>
-             </div>
-
-             <div style="margin-bottom: 15px;">
-                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                     <span>W Serwisie (@wSerwisie)</span>
-                     <span>@ObliczProcent(wSerwisie)%</span>
-                 </div>
-                 <div class="progress-bar" style="width: 100%;"><div class="progress-fill" style="width: @ObliczProcent(wSerwisie)%; background: #EF4444;"></div></div>
-             </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-success">
+                <div class="card-body text-center">
+                    <small class="text-muted">Wydatki na Paliwo</small>
+                    <h3 class="text-success fw-bold">@KosztyPaliwa.ToString("C0")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-danger">
+                <div class="card-body text-center">
+                    <small class="text-muted">Wydatki na Serwis</small>
+                    <h3 class="text-danger fw-bold">@KosztySerwisu.ToString("C0")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-warning">
+                <div class="card-body text-center">
+                    <small class="text-muted">Średni koszt na auto</small>
+                    <h3 class="text-dark fw-bold">@SredniKosztNaAuto.ToString("C0")</h3>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3 class="chart-title">Podsumowanie Zasobów</h3>
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">🏆 Najdroższe pojazdy w utrzymaniu</h5>
+                </div>
+                <div class="card-body">
+                    @if (RankingAut.Any())
+                    {
+                        @foreach (var r in RankingAut)
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="fw-bold">@r.Marka @r.Model <small class="text-muted">(@r.Rejestracja)</small></span>
+                                    <span>@r.SumaKosztow.ToString("C")</span>
+                                </div>
+                                @{
+                                    var maxKoszt = RankingAut.First().SumaKosztow; // Najdroższe auto to 100% paska
+                                    var procent = maxKoszt > 0 ? (r.SumaKosztow / maxKoszt) * 100 : 0;
+                                }
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: @((int)procent)%"></div>
+                                </div>
+                                <small class="text-muted">
+                                    Paliwo: @r.Paliwo.ToString("C0") | Serwis: @r.Serwis.ToString("C0")
+                                </small>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center">Brak danych o kosztach.</p>
+                    }
+                </div>
+            </div>
         </div>
-        <div class="chart-placeholder" style="min-height: 200px; display: flex; flex-direction: column; justify-content: center; gap: 20px;">
-             <div class="stat-item" style="text-align: center;">
-                 <div style="font-size: 36px; font-weight: bold; color: #0052CC;">@sumaPojazdow</div>
-                 <div style="color: #6B7280;">Wszystkich Pojazdów</div>
-             </div>
-             <div class="stat-item" style="text-align: center;">
-                 <div style="font-size: 36px; font-weight: bold; color: #4B5563;">@liczbaKierowcow</div>
-                 <div style="color: #6B7280;">Zatrudnionych Kierowców</div>
-             </div>
-        </div>
-    </div>
 
-    <div class="chart-card">
-        <div class="chart-header">
-            <h3 class="chart-title">Łączny Przebieg Floty</h3>
-        </div>
-        <div class="chart-placeholder" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
-             <div style="text-align: center;">
-                 <div style="font-size: 42px; font-weight: 800; color: #1F2937;">
-                     @(lacznyPrzebieg.ToString("N0")) <span style="font-size: 16px; color: #9CA3AF;">km</span>
-                 </div>
-                 <div style="margin-top: 10px; font-size: 14px; color: #059669;">
-                     + Średnio @(sumaPojazdow > 0 ? (lacznyPrzebieg/sumaPojazdow).ToString("N0") : "0") km na pojazd
-                 </div>
-             </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">🚗 Struktura Floty</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted">Statusy pojazdów</h6>
+                    
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Dostępne</span>
+                            <span class="text-success fw-bold">@IleDostepnych</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: @ObliczProcent(IleDostepnych)%"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>W Trasie (Wydane)</span>
+                            <span class="text-warning fw-bold">@IleWTrasie</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" style="width: @ObliczProcent(IleWTrasie)%"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>W Serwisie</span>
+                            <span class="text-danger fw-bold">@IleWSerwisie</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-danger" style="width: @ObliczProcent(IleWSerwisie)%"></div>
+                        </div>
+                    </div>
+                    
+                    <hr/>
+                    <div class="text-center mt-3">
+                        <h1>@LacznaLiczbaAut</h1>
+                        <span class="text-muted">Wszystkich pojazdów</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 @code {
-    int sumaPojazdow = 0;
-    int dostepne = 0;
-    int wTrasie = 0;
-    int wSerwisie = 0;
-    int liczbaKierowcow = 0;
-    decimal lacznyPrzebieg = 0;
+    // Zmienne do statystyk
+    private decimal LaczneKoszty = 0;
+    private decimal KosztyPaliwa = 0;
+    private decimal KosztySerwisu = 0;
+    private decimal SredniKosztNaAuto = 0;
+
+    private int LacznaLiczbaAut = 0;
+    private int IleDostepnych = 0;
+    private int IleWTrasie = 0;
+    private int IleWSerwisie = 0;
+
+    // Klasa pomocnicza do rankingu
+    class AutoStatystyka
+    {
+        public string Marka { get; set; } = "";
+        public string Model { get; set; } = "";
+        public string Rejestracja { get; set; } = "";
+        public decimal Paliwo { get; set; }
+        public decimal Serwis { get; set; }
+        public decimal SumaKosztow => Paliwo + Serwis;
+    }
+
+    private List<AutoStatystyka> RankingAut = new();
 
     protected override async Task OnInitializedAsync()
     {
-        var pojazdy = await PojazdSerwis.PobierzWszystkieAsync();
-        var kierowcy = await KierowcaSerwis.PobierzWszystkichAsync();
+        await ZaladujDane();
+    }
 
-        sumaPojazdow = pojazdy.Count;
-        liczbaKierowcow = kierowcy.Count;
+    private async Task ZaladujDane()
+    {
+        // 1. Pobierz dane
+        var pojazdy = await PojazdSerwis.PobierzWszystkieAsync();
+        // Filtrujemy wyłączone, żeby nie psuły statystyk (chyba że chcesz historyczne)
+        var aktywnePojazdy = pojazdy.Where(p => p.Status != Flota.Domain.Enums.StatusPojazdu.Wylaczony).ToList();
+
+        var tankowania = await TankowanieSerwis.PobierzWszystkieAsync();
+        var serwisy = await SerwisPojazdu.PobierzWszystkieAsync();
+
+        // 2. Oblicz Statusy
+        LacznaLiczbaAut = aktywnePojazdy.Count;
+        IleDostepnych = aktywnePojazdy.Count(p => p.Status == Flota.Domain.Enums.StatusPojazdu.Dostepny);
+        IleWTrasie = aktywnePojazdy.Count(p => p.Status == Flota.Domain.Enums.StatusPojazdu.WUzytkowaniu);
+        IleWSerwisie = aktywnePojazdy.Count(p => p.Status == Flota.Domain.Enums.StatusPojazdu.WSerwisie);
+
+        // 3. Oblicz Koszty Globalne
+        KosztyPaliwa = tankowania.Sum(t => t.LacznyKoszt);
+        KosztySerwisu = serwisy.Sum(s => s.Koszt); // Upewnij się czy pole to 'Koszt' czy 'KosztNaprawy'
+        LaczneKoszty = KosztyPaliwa + KosztySerwisu;
         
-        if (sumaPojazdow > 0)
+        if (LacznaLiczbaAut > 0)
+            SredniKosztNaAuto = LaczneKoszty / LacznaLiczbaAut;
+        else
+            SredniKosztNaAuto = 0;
+
+        // 4. Buduj Ranking Aut
+        RankingAut = new List<AutoStatystyka>();
+        
+        foreach (var p in aktywnePojazdy)
         {
-            dostepne = pojazdy.Count(p => p.Status == StatusPojazdu.Dostepny);
-            wTrasie = pojazdy.Count(p => p.Status == StatusPojazdu.WUzytkowaniu);
-            wSerwisie = pojazdy.Count(p => p.Status == StatusPojazdu.WSerwisie);
-            lacznyPrzebieg = pojazdy.Sum(p => p.Przebieg);
+            var kosztPaliwaAuta = tankowania.Where(t => t.PojazdId == p.Id).Sum(t => t.LacznyKoszt);
+            var kosztSerwisuAuta = serwisy.Where(s => s.PojazdId == p.Id).Sum(s => s.Koszt);
+
+            RankingAut.Add(new AutoStatystyka
+            {
+                Marka = p.Marka,
+                Model = p.Model,
+                Rejestracja = p.NumerRejestracyjny,
+                Paliwo = kosztPaliwaAuta,
+                Serwis = kosztSerwisuAuta
+            });
         }
+
+        // Sortuj malejąco po sumie kosztów i weź TOP 5
+        RankingAut = RankingAut.OrderByDescending(x => x.SumaKosztow).Take(5).ToList();
     }
 
     private double ObliczProcent(int wartosc)
     {
-        if (sumaPojazdow == 0) return 0;
-        return Math.Round((double)wartosc / sumaPojazdow * 100, 1);
+        if (LacznaLiczbaAut == 0) return 0;
+        return ((double)wartosc / LacznaLiczbaAut) * 100;
     }
 }

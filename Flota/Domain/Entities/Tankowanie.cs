@@ -18,4 +18,9 @@ public class Tankowanie
 
     [Column(TypeName = "decimal(10,2)")] 
     public decimal CenaZaLitr { get; set; }
+    
+    public bool CzyDoPelna { get; set; }
+    
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal LacznyKoszt { get; set; }
 }

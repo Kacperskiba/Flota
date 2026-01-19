@@ -3,118 +3,170 @@
 @using Flota.Domain.Interfaces
 @inject ITankowanieSerwis TankowanieSerwis
 @inject IPojazdSerwis PojazdSerwis
+@inject IJSRuntime JS
+
 @rendermode RenderMode.InteractiveServer
 
-<div class="section-header">
-    <h2 class="section-title">Rejestr Tankowań</h2>
-</div>
-
-<div class="form-container" style="margin-bottom: 32px;">
-    <div class="form-header">
-        <h2 class="form-title">Dodaj Tankowanie</h2>
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>⛽ Rejestr Tankowań</h2>
     </div>
 
-    <EditForm Model="@noweTankowanie" OnValidSubmit="DodajTankowanie">
-        <DataAnnotationsValidator />
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Wybierz Pojazd</label>
-                <InputSelect @bind-Value="noweTankowanie.PojazdId" class="form-input">
-                    <option value="0">-- Wybierz --</option>
-                    @if (listaPojazdow != null)
-                    {
-                        foreach (var p in listaPojazdow)
-                        {
-                            <option value="@p.Id">@p.Marka @p.Model (@p.NumerRejestracyjny)</option>
-                        }
-                    }
-                </InputSelect>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Data</label>
-                <InputDate @bind-Value="noweTankowanie.Data" class="form-input" />
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Dodaj Tankowanie</h5>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="@noweTankowanie" OnValidSubmit="DodajTankowanie">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Pojazd</label>
+                            <InputSelect @bind-Value="noweTankowanie.PojazdId" class="form-select">
+                                <option value="0">-- Wybierz --</option>
+                                @foreach (var p in pojazdy)
+                                {
+                                    <option value="@p.Id">@p.Marka @p.Model (@p.NumerRejestracyjny)</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Data</label>
+                            <InputDate @bind-Value="noweTankowanie.Data" class="form-control" />
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Litry</label>
+                                <InputNumber @bind-Value="noweTankowanie.IloscLitrow" class="form-control" @oninput="PrzeliczKoszt" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Cena/L (PLN)</label>
+                                <InputNumber @bind-Value="noweTankowanie.CenaZaLitr" class="form-control" @oninput="PrzeliczKoszt" />
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <InputCheckbox @bind-Value="noweTankowanie.CzyDoPelna" class="form-check-input" id="doPelna" />
+                            <label class="form-check-label" for="doPelna">
+                                Tankowanie do pełna (Full)
+                            </label>
+                        </div>
+
+                        <div class="alert alert-light border text-center">
+                            <small class="text-muted">Szacowany koszt:</small>
+                            <h4 class="text-success fw-bold m-0">
+                                @((noweTankowanie.IloscLitrow * noweTankowanie.CenaZaLitr).ToString("C"))
+                            </h4>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Zapisz Tankowanie</button>
+                        </div>
+                    </EditForm>
+                </div>
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Ilość Litrów</label>
-                <InputNumber @bind-Value="noweTankowanie.IloscLitrow" class="form-input" />
-            </div>
-            <div class="form-group">
-                <label class="form-label">Cena za Litr (PLN)</label>
-                <InputNumber @bind-Value="noweTankowanie.CenaZaLitr" class="form-input" />
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-hover table-striped mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Pojazd</th>
+                                <th>Data</th>
+                                <th>Paliwo</th>
+                                <th>Cena/L</th>
+                                <th>Koszt</th>
+                                <th>Pełny?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (tankowania == null)
+                            {
+                                <tr><td colspan="6" class="text-center p-3">Ładowanie...</td></tr>
+                            }
+                            else if (!tankowania.Any())
+                            {
+                                <tr><td colspan="6" class="text-center p-3">Brak wpisów.</td></tr>
+                            }
+                            else
+                            {
+                                @foreach (var t in tankowania)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if(t.Pojazd != null)
+                                            {
+                                                <strong>@t.Pojazd.Marka @t.Pojazd.Model</strong><br/>
+                                                <small class="text-muted">@t.Pojazd.NumerRejestracyjny</small>
+                                            }
+                                            else { <span>Usunięty</span> }
+                                        </td>
+                                        <td>@t.Data.ToShortDateString()</td>
+                                        <td>@t.IloscLitrow.ToString("N1") L</td>
+                                        <td>@t.CenaZaLitr.ToString("C")</td>
+                                        <td class="fw-bold text-success">
+                                            @t.LacznyKoszt.ToString("C")
+                                        </td>
+                                        <td>
+                                            @if (t.CzyDoPelna)
+                                            {
+                                                <span class="badge bg-success">TAK</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">NIE</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn-primary">Zapisz Tankowanie</button>
-        </div>
-        
-        @if (pokazSukces)
-        {
-            <div class="alert alert-success mt-3">Tankowanie zapisane!</div>
-        }
-    </EditForm>
-</div>
-
-<div class="data-table">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Pojazd</th>
-                <th>Data</th>
-                <th>Paliwo</th>
-                <th>Koszt</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (tankowania == null) { <tr><td colspan="4">Ładowanie...</td></tr> }
-            else
-            {
-                @foreach (var t in tankowania)
-                {
-                    <tr>
-                        <td><strong>@t.Pojazd?.Marka @t.Pojazd?.Model</strong> <br/> <small>@t.Pojazd?.NumerRejestracyjny</small></td>
-                        <td>@t.Data.ToShortDateString()</td>
-                        <td>@t.IloscLitrow L</td>
-                        <td>@((t.IloscLitrow * t.CenaZaLitr).ToString("C"))</td>
-                    </tr>
-                }
-            }
-        </tbody>
-    </table>
+    </div>
 </div>
 
 @code {
-    private List<Tankowanie>? tankowania;
-    private List<Pojazd>? listaPojazdow;
-    private Tankowanie noweTankowanie = new() { Data = DateTime.Now };
-    private bool pokazSukces = false;
+    private List<Tankowanie> tankowania = new();
+    private List<Pojazd> pojazdy = new();
+    private Tankowanie noweTankowanie = new();
 
     protected override async Task OnInitializedAsync()
     {
-        listaPojazdow = await PojazdSerwis.PobierzWszystkieAsync();
-        await ZaladujTankowania();
+        await ZaladujDane();
     }
 
-    private async Task ZaladujTankowania()
+    private async Task ZaladujDane()
     {
         tankowania = await TankowanieSerwis.PobierzWszystkieAsync();
+        // Pobieramy tylko aktywne pojazdy (nie wyłączone), żeby nie tankować "trupów"
+        var wszystkiePojazdy = await PojazdSerwis.PobierzWszystkieAsync();
+        pojazdy = wszystkiePojazdy.Where(p => p.Status != Flota.Domain.Enums.StatusPojazdu.Wylaczony).ToList();
+        
+        // Reset formularza
+        noweTankowanie = new Tankowanie { Data = DateTime.Now };
+    }
+    
+    // Metoda wywoływana przy wpisywaniu liczb - do odświeżania UI (kosztu)
+    private void PrzeliczKoszt(ChangeEventArgs e)
+    {
+        // To tylko wymusza odświeżenie widoku @((... * ...).ToString("C"))
+        StateHasChanged();
     }
 
     private async Task DodajTankowanie()
     {
-        if (noweTankowanie.PojazdId == 0) return; // Walidacja wyboru auta
+        if (noweTankowanie.PojazdId == 0) return;
 
         await TankowanieSerwis.DodajAsync(noweTankowanie);
-        pokazSukces = true;
-        noweTankowanie = new() { Data = DateTime.Now }; // Reset
-        await ZaladujTankowania();
-        
-        await Task.Delay(3000);
-        pokazSukces = false;
-        StateHasChanged();
+        await ZaladujDane();
     }
 }

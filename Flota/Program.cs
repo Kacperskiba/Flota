@@ -22,6 +22,7 @@ builder.Services.AddScoped<IKierowcaSerwis, KierowcaSerwis>();
 builder.Services.AddScoped<ISerwisPojazdu, SerwisPojazdu>();
 builder.Services.AddScoped<IPrzydzialSerwis, PrzydzialSerwis>();
 builder.Services.AddScoped<IUbezpieczenieSerwis, UbezpieczenieSerwis>();
+builder.Services.AddScoped<IHarmonogramSerwis, HarmonogramSerwis>();
 
 var app = builder.Build();
 

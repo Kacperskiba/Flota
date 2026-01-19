@@ -6,5 +6,4 @@
 - Sprawdzić czy jakieś pola są jeszcze potrzebne do danych
 - dodac wiecej danych przykładowych
 - wyłączenie auta z uzytku ( żeby sie wszystkie statusyPojazdu z diagramu zgadziały)
-- Ubezpieczenia 
 - przeglady

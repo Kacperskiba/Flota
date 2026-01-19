@@ -37,3 +37,8 @@ public interface IUbezpieczenieSerwis {
     Task UsunAsync(int id);
     Task<List<Ubezpieczenie>> PobierzWygasajaceAsync(int dni);
 }
+public interface IHarmonogramSerwis
+{
+    Task<HarmonogramPrzegladow?> PobierzDlaPojazduAsync(int pojazdId);
+    Task UstawHarmonogramAsync(HarmonogramPrzegladow h);
+}

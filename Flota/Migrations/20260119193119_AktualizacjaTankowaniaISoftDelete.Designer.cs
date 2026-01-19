@@ -4,6 +4,7 @@ using Flota.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Flota.Migrations
 {
     [DbContext(typeof(FleetDbContext))]
-    partial class FleetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119193119_AktualizacjaTankowaniaISoftDelete")]
+    partial class AktualizacjaTankowaniaISoftDelete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,36 +24,6 @@ namespace Flota.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Flota.Domain.Entities.HarmonogramPrzegladow", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DataOstatniegoPrzegladu")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InterwalDni")
-                        .HasColumnType("int");
-
-                    b.Property<int>("InterwalKm")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PojazdId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("PrzebiegOstatniegoPrzegladu")
-                        .HasColumnType("decimal(12,1)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PojazdId");
-
-                    b.ToTable("Harmonogramy");
-                });
 
             modelBuilder.Entity("Flota.Domain.Entities.Kierowca", b =>
                 {
@@ -279,17 +252,6 @@ namespace Flota.Migrations
                     b.HasIndex("PojazdId");
 
                     b.ToTable("WpisSerwisowy");
-                });
-
-            modelBuilder.Entity("Flota.Domain.Entities.HarmonogramPrzegladow", b =>
-                {
-                    b.HasOne("Flota.Domain.Entities.Pojazd", "Pojazd")
-                        .WithMany()
-                        .HasForeignKey("PojazdId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Pojazd");
                 });
 
             modelBuilder.Entity("Flota.Domain.Entities.Przydzial", b =>

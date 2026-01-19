@@ -6,6 +6,7 @@
 @inject ISerwisPojazdu SerwisPojazdu
 @inject ITankowanieSerwis TankowanieSerwis
 @inject IPrzydzialSerwis PrzydzialSerwis
+@inject IHarmonogramSerwis HarmonogramSerwis
 @inject NavigationManager NavManager
 
 @rendermode RenderMode.InteractiveServer
@@ -23,85 +24,152 @@
     else
     {
         <div class="card mb-4 shadow-sm border-primary">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header bg-primary text-white d-flex justify-content-between">
                 <h4 class="mb-0">@pojazd.Marka @pojazd.Model</h4>
+                <span class="badge bg-light text-dark">@pojazd.NumerRejestracyjny</span>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <small class="text-muted">Rejestracja</small>
-                        <div class="fs-5 fw-bold">@pojazd.NumerRejestracyjny</div>
-                    </div>
-                    <div class="col-md-3">
-                        <small class="text-muted">Rok produkcji</small>
-                        <div class="fs-5">@pojazd.RokProdukcji</div>
-                    </div>
-                    <div class="col-md-3">
+                <div class="row text-center">
+                    <div class="col-md-4">
                         <small class="text-muted">Aktualny Przebieg</small>
-                        <div class="fs-5">@pojazd.Przebieg.ToString("N0") km</div>
+                        <div class="fs-4 fw-bold">@pojazd.Przebieg.ToString("N0") km</div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <small class="text-muted">Status</small>
-                        <div>
-                            <span class="badge @(pojazd.Status == Flota.Domain.Enums.StatusPojazdu.Dostepny ? "bg-success" : "bg-warning text-dark") fs-6">
-                                @pojazd.Status
-                            </span>
+                        <div class="fs-4">
+                            @if(pojazd.Status == Flota.Domain.Enums.StatusPojazdu.Wylaczony)
+                            {
+                                <span class="badge bg-secondary">Wyłączony</span>
+                            }
+                            else if (pojazd.Status == Flota.Domain.Enums.StatusPojazdu.WSerwisie)
+                            {
+                                <span class="badge bg-warning text-dark">W Serwisie</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Dostępny</span>
+                            }
                         </div>
+                    </div>
+                     <div class="col-md-4">
+                        <small class="text-muted">Rok Produkcji</small>
+                        <div class="fs-4">@pojazd.RokProdukcji</div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <div class="card shadow-sm mb-4 @(alertPrzegladu ? "border-danger" : "border-info")">
+            <div class="card-header @(alertPrzegladu ? "bg-danger text-white" : "bg-info text-dark") d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">📅 Harmonogram Przeglądów</h5>
+                @if (alertPrzegladu) { <span class="badge bg-white text-danger fw-bold">WYMAGANY PRZEGLĄD!</span> }
+            </div>
+            <div class="card-body">
+                @if (harmonogram == null)
+                {
+                    <p class="text-muted">Nie skonfigurowano harmonogramu dla tego pojazdu.</p>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Ustawienia:</strong> Co @harmonogram.InterwalKm km lub @harmonogram.InterwalDni dni.
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <strong>Ostatni przegląd:</strong> @harmonogram.DataOstatniegoPrzegladu.ToShortDateString() 
+                            (przy @harmonogram.PrzebiegOstatniegoPrzegladu km)
+                        </div>
+                    </div>
+                    
+                    @if (alertPrzegladu)
+                    {
+                        <div class="alert alert-danger mt-3 mb-0">
+                            <strong>Uwaga!</strong> Przekroczono limit kilometrów lub dni. Należy umówić wizytę w serwisie.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="progress mt-3" style="height: 25px;">
+                            @{
+                                // Obliczanie % zużycia do paska postępu
+                                var dniTemu = (DateTime.Now - harmonogram.DataOstatniegoPrzegladu).TotalDays;
+                                var kmPrzejechane = pojazd.Przebieg - harmonogram.PrzebiegOstatniegoPrzegladu;
+                                
+                                double procDni = (dniTemu / harmonogram.InterwalDni) * 100;
+                                double procKm = (double)(kmPrzejechane / harmonogram.InterwalKm) * 100;
+                                double maxProc = Math.Max(procDni, procKm);
+                                maxProc = Math.Min(maxProc, 100); // Max 100%
+                                
+                                string kolorPaska = maxProc > 80 ? "bg-warning" : "bg-success";
+                            }
+                            <div class="progress-bar @kolorPaska" role="progressbar" style="width: @maxProc%;">
+                                @maxProc.ToString("N0")% zużycia
+                            </div>
+                        </div>
+                        <small class="text-muted">Pozostało: @(harmonogram.InterwalDni - (int)dniTemu) dni LUB @(harmonogram.InterwalKm - kmPrzejechane) km</small>
+                    }
+                }
+
+                <hr/>
+                <button class="btn btn-sm btn-outline-dark" type="button" @onclick="() => czyPokazacKonfiguracje = !czyPokazacKonfiguracje">
+                   ⚙️ Konfiguruj Harmonogram
+                </button>
+                
+                @if (czyPokazacKonfiguracje)
+                {
+                    <div class="mt-3">
+                        <div class="card card-body bg-light">
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="small">Co ile km?</label>
+                                    <input type="number" class="form-control" @bind="tempHarmonogram.InterwalKm" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small">Co ile dni?</label>
+                                    <input type="number" class="form-control" @bind="tempHarmonogram.InterwalDni" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small">Data ostatniego</label>
+                                    <input type="date" class="form-control" @bind="tempHarmonogram.DataOstatniegoPrzegladu" />
+                                </div>
+                                <div class="col-md-3 d-grid align-items-end">
+                                    <button class="btn btn-primary" @onclick="ZapiszHarmonogram">Zapisz</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-lg-6">
-                
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">📜 Polisy Ubezpieczeniowe</h5>
-                    </div>
+                    <div class="card-header bg-light"><h5 class="mb-0">📜 Polisy Ubezpieczeniowe</h5></div>
                     <div class="card-body p-0">
                         @if (ubezpieczenia.Any())
                         {
                             <table class="table table-striped mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Polisa / Firma</th>
-                                        <th>Ważność</th>
-                                        <th>Akcja</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr><th>Polisa</th><th>Ważność</th><th>Akcja</th></tr></thead>
                                 <tbody>
-                                    @foreach (var u in ubezpieczenia)
-                                    {
-                                        var czyWygasa = (u.DataZakonczenia - DateTime.Now).TotalDays < 30;
-                                        <tr class="@(czyWygasa ? "table-danger" : "")">
-                                            <td>
-                                                <strong>@u.NumerPolisy</strong><br/>
-                                                <small>@u.Ubezpieczyciel</small>
-                                            </td>
-                                            <td>
-                                                @u.DataRozpoczecia.ToShortDateString() - @u.DataZakonczenia.ToShortDateString()
-                                                @if(czyWygasa) { <span class="badge bg-danger">Wygasa!</span> }
-                                            </td>
-                                            <td class="align-middle">
-                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => UsunPolise(u.Id)">X</button>
-                                            </td>
+                                    @foreach (var u in ubezpieczenia) {
+                                        <tr>
+                                            <td>@u.NumerPolisy<br/><small>@u.Ubezpieczyciel</small></td>
+                                            <td>@u.DataZakonczenia.ToShortDateString()</td>
+                                            <td><button class="btn btn-sm btn-outline-danger" @onclick="()=>UsunPolise(u.Id)">X</button></td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
                         }
-                        else
-                        {
-                            <div class="p-3 text-muted text-center">Brak historii ubezpieczeń.</div>
-                        }
-                        
-                        <div class="p-3 border-top bg-light">
+                         <div class="p-3 border-top bg-light">
                             <h6 class="text-muted mb-2">Dodaj nową polisę</h6>
                             <div class="row g-2">
                                 <div class="col-4"><input class="form-control form-control-sm" placeholder="Nr Polisy" @bind="noweUbezpieczenie.NumerPolisy" /></div>
                                 <div class="col-4"><input class="form-control form-control-sm" placeholder="Firma" @bind="noweUbezpieczenie.Ubezpieczyciel" /></div>
-                                <div class="col-4"><input type="number" class="form-control form-control-sm" placeholder="Koszt" @bind="noweUbezpieczenie.Koszt" /></div>
+                                <div class="col-4">
+                                     <input type="number" class="form-control form-control-sm" placeholder="Koszt" @bind="noweUbezpieczenie.Koszt" />
+                                </div>
                                 <div class="col-6"><input type="date" class="form-control form-control-sm" @bind="noweUbezpieczenie.DataRozpoczecia" /></div>
                                 <div class="col-6"><input type="date" class="form-control form-control-sm" @bind="noweUbezpieczenie.DataZakonczenia" /></div>
                                 <div class="col-12 d-grid"><button class="btn btn-primary btn-sm" @onclick="DodajPolise">Zapisz Polisę</button></div>
@@ -111,120 +179,66 @@
                 </div>
 
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-danger text-white">
-                        <h5 class="mb-0">🛠️ Historia Napraw</h5>
-                    </div>
+                    <div class="card-header bg-danger text-white"><h5 class="mb-0">🛠️ Historia Napraw</h5></div>
                     <div class="card-body p-0">
-                        @if (serwisy.Any())
-                        {
+                        @if (serwisy.Any()) {
                             <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Opis</th>
-                                        <th>Koszt</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr><th>Data</th><th>Opis</th><th>Koszt</th></tr></thead>
                                 <tbody>
-                                    @foreach (var s in serwisy)
-                                    {
+                                    @foreach (var s in serwisy) {
                                         <tr>
                                             <td>@s.DataZgloszenia.ToShortDateString()</td>
-                                            <td>
-                                                @s.Opis <br/>
-                                                <span class="badge bg-secondary">@s.Status</span>
-                                            </td>
+                                            <td>@s.Opis <span class="badge bg-secondary">@s.Status</span></td>
                                             <td>@s.Koszt.ToString("C")</td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
-                        }
-                        else
-                        {
-                            <div class="p-3 text-muted text-center">Auto nie było jeszcze w serwisie.</div>
-                        }
+                        } else { <div class="p-3 text-muted text-center">Brak napraw.</div> }
                     </div>
                 </div>
-
             </div>
 
             <div class="col-lg-6">
-                
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">⛽ Rejestr Tankowań</h5>
-                    </div>
+                 <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white"><h5 class="mb-0">⛽ Tankowania</h5></div>
                     <div class="card-body p-0">
-                         @if (tankowania.Any())
-                        {
+                         @if (tankowania.Any()) {
                             <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Paliwo</th>
-                                        <th>Koszt</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr><th>Data</th><th>Paliwo</th><th>Pełny?</th><th>Koszt</th></tr></thead>
                                 <tbody>
-                                    @foreach (var t in tankowania)
-                                    {
+                                    @foreach (var t in tankowania) {
                                         <tr>
                                             <td>@t.Data.ToShortDateString()</td>
                                             <td>@t.IloscLitrow L</td>
-                                            <td>@((t.IloscLitrow * t.CenaZaLitr).ToString("C"))</td>
+                                            <td>@(t.CzyDoPelna ? "TAK" : "NIE")</td>
+                                            <td>@t.LacznyKoszt.ToString("C")</td> 
                                         </tr>
                                     }
                                 </tbody>
                             </table>
-                        }
-                        else
-                        {
-                            <div class="p-3 text-muted text-center">Brak zarejestrowanych tankowań.</div>
-                        }
+                        } else { <div class="p-3 text-muted text-center">Brak tankowań.</div> }
                     </div>
                 </div>
-
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">🔑 Historia Kierowców</h5>
-                    </div>
+                 <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark"><h5 class="mb-0">🔑 Kierowcy</h5></div>
                     <div class="card-body p-0">
-                        @if (przydzialy.Any())
-                        {
+                        @if (przydzialy.Any()) {
                             <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Kierowca</th>
-                                        <th>Wydano</th>
-                                        <th>Zdano</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr><th>Kierowca</th><th>Wydano</th><th>Zdano</th></tr></thead>
                                 <tbody>
-                                    @foreach (var p in przydzialy)
-                                    {
+                                    @foreach (var p in przydzialy) {
                                         <tr>
-                                            <td>
-                                                @if(p.Kierowca != null) { @p.Kierowca.Imie @p.Kierowca.Nazwisko } 
-                                                else { <span class="text-muted">Nieznany</span> }
-                                            </td>
+                                            <td>@if(p.Kierowca!=null){@p.Kierowca.Nazwisko}else{<span>-</span>}</td>
                                             <td>@p.DataRozpoczecia.ToShortDateString()</td>
-                                            <td>
-                                                @if(p.DataZakonczenia.HasValue) { @p.DataZakonczenia.Value.ToShortDateString() }
-                                                else { <span class="badge bg-success">W trasie</span> }
-                                            </td>
+                                            <td>@(p.DataZakonczenia.HasValue ? p.DataZakonczenia.Value.ToShortDateString() : "W trasie")</td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
-                        }
-                        else
-                        {
-                            <div class="p-3 text-muted text-center">Auto nie było jeszcze przydzielone.</div>
-                        }
+                        } else { <div class="p-3 text-muted text-center">Brak historii.</div> }
                     </div>
                 </div>
-
             </div>
         </div>
     }
@@ -234,52 +248,78 @@
     [Parameter] public int Id { get; set; }
 
     private Pojazd? pojazd;
+    private HarmonogramPrzegladow? harmonogram;
+    private HarmonogramPrzegladow tempHarmonogram = new(); // Do formularza
     
-    // Listy danych
+    private bool alertPrzegladu = false;
+
+    // Listy
     private List<Ubezpieczenie> ubezpieczenia = new();
     private List<WpisSerwisowy> serwisy = new();
     private List<Tankowanie> tankowania = new();
     private List<Przydzial> przydzialy = new();
-
     private Ubezpieczenie noweUbezpieczenie = new();
+    private bool czyPokazacKonfiguracje = false;
 
     protected override async Task OnInitializedAsync()
     {
         await ZaladujDane();
         
-        noweUbezpieczenie.DataRozpoczecia = DateTime.Now;
-        noweUbezpieczenie.DataZakonczenia = DateTime.Now.AddYears(1);
+        // Domyślne wartości dla nowego harmonogramu
+        tempHarmonogram.InterwalKm = 15000;
+        tempHarmonogram.InterwalDni = 365;
+        tempHarmonogram.DataOstatniegoPrzegladu = DateTime.Now;
+        
+        ZresetujFormularzUbezp();
     }
 
     private async Task ZaladujDane()
     {
-        // 1. Pobierz Pojazd
         var wszystkiePojazdy = await PojazdSerwis.PobierzWszystkieAsync();
         pojazd = wszystkiePojazdy.FirstOrDefault(p => p.Id == Id);
+        if(pojazd == null) return;
 
-        // 2. Pobierz Ubezpieczenia (dedykowana metoda)
         ubezpieczenia = await UbezpieczenieSerwis.PobierzDlaPojazduAsync(Id);
-
-        // 3. Pobierz i przefiltruj Historię Serwisową
+        
         var allSerwisy = await SerwisPojazdu.PobierzWszystkieAsync();
         serwisy = allSerwisy.Where(s => s.PojazdId == Id).OrderByDescending(s => s.DataZgloszenia).ToList();
 
-        // 4. Pobierz i przefiltruj Tankowania
         var allTankowania = await TankowanieSerwis.PobierzWszystkieAsync();
         tankowania = allTankowania.Where(t => t.PojazdId == Id).OrderByDescending(t => t.Data).ToList();
 
-        // 5. Pobierz i przefiltruj Przydziały (Zarówno aktywne jak i historię)
-        // Uwaga: Metoda PobierzHistorieAsync zwraca tylko zakończone, PobierzAktywneAsync tylko trwające.
-        // Jeśli chcesz pełną historię, warto połączyć te listy lub dodać metodę w serwisie.
-        // Na ten moment pobieramy historię (zakończone).
         var historyczne = await PrzydzialSerwis.PobierzHistorieAsync();
         var aktywne = await PrzydzialSerwis.PobierzAktywneAsync();
+        przydzialy = historyczne.Concat(aktywne).Where(p => p.PojazdId == Id).OrderByDescending(p => p.DataRozpoczecia).ToList();
+
+        // HARMONOGRAM - Logika biznesowa
+        harmonogram = await HarmonogramSerwis.PobierzDlaPojazduAsync(Id);
+        if (harmonogram != null)
+        {
+            // Aktualizuj formularz danymi z bazy
+            tempHarmonogram.InterwalKm = harmonogram.InterwalKm;
+            tempHarmonogram.InterwalDni = harmonogram.InterwalDni;
+            tempHarmonogram.DataOstatniegoPrzegladu = harmonogram.DataOstatniegoPrzegladu;
+            
+            // SPRAWDŹ CZY WYMAGANY PRZEGLĄD (metoda z encji)
+            alertPrzegladu = harmonogram.CzyWymaganyPrzeglad(pojazd.Przebieg);
+        }
+    }
+
+    private async Task ZapiszHarmonogram()
+    {
+        tempHarmonogram.PojazdId = Id;
+        // Ważne: przy zapisie pobieramy aktualny przebieg jako 'przebieg ostatniego przeglądu'
+        // jeśli data jest dzisiejsza (czyli robimy przegląd teraz).
+        // Tutaj upraszczamy - użytkownik wpisuje datę, ale przebieg bierzemy z auta w momencie 'resetu'.
         
-        przydzialy = historyczne
-            .Concat(aktywne)
-            .Where(p => p.PojazdId == Id)
-            .OrderByDescending(p => p.DataRozpoczecia)
-            .ToList();
+        if (tempHarmonogram.DataOstatniegoPrzegladu.Date == DateTime.Now.Date && pojazd != null)
+        {
+             tempHarmonogram.PrzebiegOstatniegoPrzegladu = pojazd.Przebieg;
+        }
+        // Jeśli edytujemy stare daty, musimy uważać. Na razie zakładamy prostą konfigurację.
+        
+        await HarmonogramSerwis.UstawHarmonogramAsync(tempHarmonogram);
+        await ZaladujDane();
     }
 
     private async Task DodajPolise()
@@ -287,20 +327,9 @@
         noweUbezpieczenie.PojazdId = Id;
         await UbezpieczenieSerwis.DodajAsync(noweUbezpieczenie);
         await ZaladujDane();
-        
-        // Reset
-        noweUbezpieczenie = new Ubezpieczenie 
-        { 
-            DataRozpoczecia = DateTime.Now, 
-            DataZakonczenia = DateTime.Now.AddYears(1) 
-        };
+        ZresetujFormularzUbezp();
     }
-
-    private async Task UsunPolise(int id)
-    {
-        await UbezpieczenieSerwis.UsunAsync(id);
-        await ZaladujDane();
-    }
-
+    private async Task UsunPolise(int id) { await UbezpieczenieSerwis.UsunAsync(id); await ZaladujDane(); }
+    private void ZresetujFormularzUbezp() { noweUbezpieczenie = new Ubezpieczenie { DataRozpoczecia = DateTime.Now, DataZakonczenia = DateTime.Now.AddYears(1) }; }
     private void Wroc() => NavManager.NavigateTo("/pojazdy");
 }
