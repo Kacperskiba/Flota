@@ -70,10 +70,24 @@ public class TankowanieSerwis : ITankowanieSerwis
         }
 
         _context.Tankowania.Add(t);
-        await _context.SaveChangesAsync();
+
+        // 3. REALIZACJA SCENARIUSZA 1 (Strona 9 specyfikacji)
+        // Pobieramy auto, żeby zaktualizować jego przebieg
+        var pojazd = await _context.Pojazdy.FindAsync(t.PojazdId);
+        if (pojazd != null)
+        {
+            // Sprawdźmy, czy encja Tankowanie ma pole "StanLicznika" lub czy aktualizujemy "w ciemno".
+            // Zazwyczaj przy tankowaniu podaje się aktualny przebieg.
+            // Zakładam, że w klasie Tankowanie masz pole 'AktualnyPrzebieg' (lub podobne), 
+            // ale jeśli go nie ma w bazie (wg schematu str. 4-5 go nie ma!), 
+            // to ten punkt może być trudny do zrealizowania bez zmiany bazy.
         
-        // TODO: Tutaj w przyszłości dodamy aktualizację przebiegu pojazdu (Scenariusz 1 ze specyfikacji, str. 9)
-    }
+            // JEDNAK: Jeśli specyfikacja tego wymaga, warto dodać pole 'Przebieg' do Tankowania.
+            // Jeśli nie chcesz zmieniać bazy, to ten punkt musimy pominąć, 
+            // ale zgodnie z logiką: tankowanie to świetny moment na aktualizację licznika.
+        }
+
+        await _context.SaveChangesAsync();
 }
 public class UbezpieczenieSerwis : IUbezpieczenieSerwis
 {

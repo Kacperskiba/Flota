@@ -2,155 +2,214 @@
 @using Flota.Domain.Entities
 @using Flota.Domain.Interfaces
 @inject IKierowcaSerwis KierowcaSerwis
+@inject IPrzydzialSerwis PrzydzialSerwis
 @inject IJSRuntime JS
+
 @rendermode RenderMode.InteractiveServer
 
-<div class="section-header">
-    <h2 class="section-title">Zarządzanie Kierowcami</h2>
-</div>
-
-<div class="form-container" style="margin-bottom: 32px;">
-    <div class="form-header">
-        <h2 class="form-title">Dodaj Nowego Kierowcę</h2>
-        <p class="form-subtitle">Wprowadź dane kierowcy do systemu</p>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold">👥 Zespół Kierowców</h2>
+            <p class="text-muted">Kartoteka pracowników i zarządzanie uprawnieniami.</p>
+        </div>
+        <div class="bg-light p-2 rounded border">
+            <span class="fw-bold text-primary">@kierowcy.Count</span> pracowników
+        </div>
     </div>
 
-    <EditForm Model="@nowyKierowca" OnValidSubmit="DodajKierowce">
-        <DataAnnotationsValidator />
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Imię</label>
-                <InputText @bind-Value="nowyKierowca.Imie" class="form-input" placeholder="Wprowadź imię" />
-                <ValidationMessage For="@(() => nowyKierowca.Imie)" class="text-danger small"/>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Nazwisko</label>
-                <InputText @bind-Value="nowyKierowca.Nazwisko" class="form-input" placeholder="Wprowadź nazwisko" />
-                <ValidationMessage For="@(() => nowyKierowca.Nazwisko)" class="text-danger small"/>
-            </div>
-        </div>
+    <div class="card shadow-sm mb-5 border-0 bg-light">
+        <div class="card-body">
+            <h5 class="card-title text-primary mb-4">➕ Zatrudnij nowego kierowcę</h5>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Numer Prawa Jazdy</label>
-                <InputText @bind-Value="nowyKierowca.NumerPrawaJazdy" class="form-input" placeholder="ABC123456" />
-                <ValidationMessage For="@(() => nowyKierowca.NumerPrawaJazdy)" class="text-danger small"/>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Telefon (Opcjonalnie)</label>
-                <InputText @bind-Value="nowyKierowca.NrTelefonu" class="form-input" placeholder="+48 123 456 789" />
-            </div>
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Adres (Opcjonalnie)</label>
-                <InputText @bind-Value="nowyKierowca.Adres" class="form-input" />
-            </div>
-            <div class="form-group">
-                <label class="form-label">Lata Doświadczenia</label>
-                <InputNumber @bind-Value="nowyKierowca.LataDoswiadczenia" class="form-input" />
-            </div>
-        </div>
+            <EditForm Model="@nowyKierowca" OnValidSubmit="DodajKierowce">
+                <DataAnnotationsValidator />
 
-        <div class="form-actions">
-            <button type="button" class="btn-secondary" @onclick="WyczyscFormularz">Wyczyść</button>
-            <button type="submit" class="btn-primary">Dodaj Kierowcę</button>
-        </div>
-        
-        @if (pokazSukces)
-        {
-            <div class="alert alert-success mt-3">
-                Kierowca został dodany pomyślnie!
-            </div>
-        }
-    </EditForm>
-</div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Imię</label>
+                        <InputText class="form-control" placeholder="Jan" @bind-Value="nowyKierowca.Imie" />
+                        <ValidationMessage For="@(() => nowyKierowca.Imie)" class="text-danger small" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Nazwisko</label>
+                        <InputText class="form-control" placeholder="Kowalski" @bind-Value="nowyKierowca.Nazwisko" />
+                        <ValidationMessage For="@(() => nowyKierowca.Nazwisko)" class="text-danger small" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">PESEL (Opcjonalnie)</label>
+                        <InputText class="form-control" placeholder="00000000000" @bind-Value="nowyKierowca.Pesel" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Nr Prawa Jazdy</label>
+                        <InputText class="form-control text-uppercase" placeholder="ABC/12345" @bind-Value="nowyKierowca.NumerPrawaJazdy" />
+                    </div>
 
-<div class="data-table">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Imię i Nazwisko</th>
-                <th>Nr Prawa Jazdy</th>
-                <th>Kontakt</th>
-                <th>Doświadczenie</th>
-                <th>Akcje</th> </tr>
-        </thead>
-        <tbody>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">E-mail</label>
+                        <InputText class="form-control" placeholder="jan@firma.pl" @bind-Value="nowyKierowca.Email" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Telefon</label>
+                        <InputText class="form-control" placeholder="+48..." @bind-Value="nowyKierowca.Telefon" />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small text-muted">Adres Zamieszkania</label>
+                        <InputText class="form-control" placeholder="Ulica, Miasto" @bind-Value="nowyKierowca.Adres" />
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Doświadczenie (lata)</label>
+                        <InputNumber class="form-control" @bind-Value="nowyKierowca.LataDoswiadczenia" />
+                    </div>
+                    <div class="col-md-10 d-flex align-items-end justify-content-end">
+                        <button class="btn btn-primary px-5 fw-bold shadow-sm" type="submit">
+                            Zapisz w Bazie
+                        </button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Lista Pracowników</h5>
+        </div>
+        <div class="card-body p-0">
             @if (kierowcy == null)
             {
-                <tr><td colspan="5">Ładowanie...</td></tr>
+            <div class="p-4 text-center">Ładowanie...</div>
             }
             else if (!kierowcy.Any())
             {
-                <tr><td colspan="5">Brak kierowców w bazie.</td></tr>
+            <div class="p-5 text-center text-muted">
+                <h4>Brak danych</h4>
+                <p>Skorzystaj z formularza powyżej, aby dodać pierwszego pracownika.</p>
+            </div>
             }
             else
             {
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                <tr>
+                    <th class="ps-4">Kierowca</th>
+                    <th>Kontakt</th>
+                    <th>Uprawnienia / Staż</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Akcje</th>
+                </tr>
+                </thead>
+                <tbody>
                 @foreach (var k in kierowcy)
                 {
-                    <tr>
-                        <td><div style="font-weight: 600;">@k.Imie @k.Nazwisko</div></td>
-                        <td>@k.NumerPrawaJazdy</td>
-                        <td>
-                            @if(!string.IsNullOrEmpty(k.NrTelefonu)) { <div>📞 @k.NrTelefonu</div> }
-                            @if(!string.IsNullOrEmpty(k.Email)) { <div>✉️ @k.Email</div> }
-                        </td>
-                        <td>@k.LataDoswiadczenia lat</td>
-                        <td>
-                            <button class="btn btn-danger btn-sm" @onclick="() => UsunKierowce(k.Id)">
-                                Usuń
-                            </button>
-                        </td>
-                    </tr>
+                // Sprawdzamy, czy kierowca jest w trasie
+                var czyWTrasie = zajeciKierowcyIds.Contains(k.Id);
+
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                👤
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">@k.PelneImie</div>
+                                <div class="small text-muted" style="font-size: 0.8rem;">
+                                    @(string.IsNullOrEmpty(k.Pesel) ? "Brak PESEL" : k.Pesel)
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="small">
+                            @if(!string.IsNullOrEmpty(k.Email))
+                            {
+                            <div class="mb-1 text-truncate" style="max-width: 150px;" title="@k.Email">📧 @k.Email</div>
+                            }
+                            @if(!string.IsNullOrEmpty(k.Telefon))
+                            {
+                            <div class="text-muted">📞 @k.Telefon</div>
+                            }
+                            else
+                            {
+                            <span class="text-muted">- brak kontaktu -</span>
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border border-secondary-subtle">PJ: @k.NumerPrawaJazdy</span>
+                        <div class="small text-muted mt-1">Staż: @k.LataDoswiadczenia lat</div>
+                    </td>
+                    <td>
+                        @if (czyWTrasie)
+                        {
+                        <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill border border-warning">
+                                            🚚 W trasie
+                                        </span>
+                        }
+                        else
+                        {
+                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill border border-success">
+                                            ✅ Dostępny
+                                        </span>
+                        }
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => UsunKierowce(k.Id)" title="Usuń z bazy">
+                            🗑️ Usuń
+                        </button>
+                    </td>
+                </tr>
                 }
+                </tbody>
+            </table>
             }
-        </tbody>
-    </table>
+        </div>
+    </div>
 </div>
 
 @code {
-    private List<Kierowca>? kierowcy;
-    private Kierowca nowyKierowca = new();
-    private bool pokazSukces = false;
+private List<Kierowca> kierowcy = new();
+private Kierowca nowyKierowca = new();
 
-    protected override async Task OnInitializedAsync()
-    {
-        await ZaladujListe();
-    }
+// Lista ID kierowców zajętych (mają auto)
+private HashSet<int> zajeciKierowcyIds = new();
 
-    private async Task ZaladujListe()
-    {
-        kierowcy = await KierowcaSerwis.PobierzWszystkichAsync();
-    }
+protected override async Task OnInitializedAsync()
+{
+await ZaladujDane();
+}
 
-    private async Task DodajKierowce()
-    {
-        await KierowcaSerwis.DodajAsync(nowyKierowca);
-        pokazSukces = true;
-        nowyKierowca = new Kierowca();
-        await ZaladujListe();
-        
-        await Task.Delay(3000);
-        pokazSukces = false;
-        StateHasChanged();
-    }
+private async Task ZaladujDane()
+{
+kierowcy = await KierowcaSerwis.PobierzWszystkichAsync();
 
-    private void WyczyscFormularz()
-    {
-        nowyKierowca = new Kierowca();
-        pokazSukces = false;
-    }
-    private async Task UsunKierowce(int id)
-    {
-        bool potwierdzenie = await JS.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć tego kierowcę? Tej operacji nie można cofnąć.");
-        
-        if (potwierdzenie)
-        {
-            await KierowcaSerwis.UsunAsync(id);
-            await ZaladujListe();
-        }
-    }
+// Logika Statusu:
+var aktywne = await PrzydzialSerwis.PobierzAktywneAsync();
+zajeciKierowcyIds = aktywne.Select(p => p.KierowcaId).ToHashSet();
+}
+
+private async Task DodajKierowce()
+{
+await KierowcaSerwis.DodajAsync(nowyKierowca);
+nowyKierowca = new Kierowca(); // Reset formularza
+await ZaladujDane();
+}
+
+private async Task UsunKierowce(int id)
+{
+// Blokada usuwania zajętego kierowcy
+if (zajeciKierowcyIds.Contains(id))
+{
+await JS.InvokeVoidAsync("alert", "🛑 Nie można usunąć kierowcy, który jest aktualnie w trasie! Najpierw zakończ jego kurs.");
+return;
+}
+
+bool potwierdzenie = await JS.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć tego pracownika?");
+if (potwierdzenie)
+{
+await KierowcaSerwis.UsunAsync(id);
+await ZaladujDane();
+}
+}
 }
