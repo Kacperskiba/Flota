@@ -11,7 +11,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>🛠️ Centrum Serwisowe</h2>
-        </div>
+    </div>
 
     <div class="row mb-4">
         <div class="col-md-6">
@@ -28,8 +28,12 @@
                             {
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong>@wpis.Pojazd.Marka @wpis.Pojazd.Model</strong> <br/>
+                                        <strong>@wpis.Pojazd?.Marka @wpis.Pojazd?.Model</strong> <br/>
                                         <small class="text-muted">@wpis.Opis</small>
+                                        @if(!string.IsNullOrEmpty(wpis.NazwaWarsztatu))
+                                        {
+                                            <br/><small class="text-secondary">📍 @wpis.NazwaWarsztatu</small>
+                                        }
                                     </div>
                                     <div class="text-end">
                                         <small>Od: @wpis.DataZgloszenia.ToShortDateString()</small><br/>
@@ -78,48 +82,54 @@
         </div>
     </div>
 
-    <div class="card shadow-sm">
+    <div class="card shadow-sm mb-5">
         <div class="card-header bg-light">
-            <h5 class="mb-0">Rejestr Zgłoszeń (Globalny)</h5>
+            <h5 class="mb-0">Rejestr Zgłoszeń i Napraw</h5>
         </div>
         <div class="card-body">
             
-            <div class="alert alert-secondary">
-                <small>💡 Aby dodać nowe zgłoszenie, najlepiej wejdź w <strong>Szczegóły Pojazdu</strong> lub użyj szybkiego formularza poniżej.</small>
+            <div class="alert alert-light border">
+                <small>💡 Aby dodać nowe zgłoszenie, użyj formularza poniżej. Pamiętaj o podaniu nazwy warsztatu (zgodnie z dokumentacją).</small>
             </div>
             
-            <div class="row g-2 mb-4 align-items-end">
-                <div class="col-md-3">
-                    <label class="small">Pojazd</label>
-                    <InputSelect class="form-select" @bind-Value="noweZgloszenie.PojazdId">
-                        <option value="0">-- Wybierz --</option>
-                        @foreach(var p in pojazdy) { <option value="@p.Id">@p.Marka @p.Model</option> }
-                    </InputSelect>
+            <EditForm Model="@noweZgloszenie" OnValidSubmit="DodajZgloszenie">
+                <div class="row g-2 mb-4 align-items-end p-3 bg-light rounded">
+                    <div class="col-md-3">
+                        <label class="small fw-bold">Pojazd</label>
+                        <InputSelect class="form-select" @bind-Value="noweZgloszenie.PojazdId">
+                            <option value="0">-- Wybierz --</option>
+                            @foreach(var p in pojazdy) { <option value="@p.Id">@p.Marka @p.Model (@p.NumerRejestracyjny)</option> }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small fw-bold">Opis Usterki</label>
+                        <InputText class="form-control" @bind-Value="noweZgloszenie.Opis" placeholder="Co się zepsuło?" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small fw-bold">Nazwa Warsztatu</label>
+                        <InputText class="form-control" @bind-Value="noweZgloszenie.NazwaWarsztatu" placeholder="np. Bosch Service" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="small fw-bold">Data / Koszt</label>
+                        <div class="input-group">
+                            <InputDate class="form-control" @bind-Value="noweZgloszenie.DataZgloszenia" />
+                        </div>
+                        <InputNumber class="form-control mt-1" @bind-Value="noweZgloszenie.Koszt" placeholder="Koszt" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100 h-100">Dodaj Wpis</button>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="small">Opis Usterki</label>
-                    <InputText class="form-control" @bind-Value="noweZgloszenie.Opis" placeholder="Co się zepsuło?" />
-                </div>
-                <div class="col-md-2">
-                    <label class="small">Data</label>
-                    <InputDate class="form-control" @bind-Value="noweZgloszenie.DataZgloszenia" />
-                </div>
-                <div class="col-md-2">
-                    <label class="small">Szacowany Koszt</label>
-                    <InputNumber class="form-control" @bind-Value="noweZgloszenie.Koszt" />
-                </div>
-                <div class="col-md-1">
-                    <button class="btn btn-primary w-100" @onclick="DodajZgloszenie">+</button>
-                </div>
-            </div>
+            </EditForm>
 
             @if (wszystkieZgloszenia.Any())
             {
-                <table class="table table-hover">
-                    <thead>
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
                         <tr>
                             <th>Pojazd</th>
                             <th>Data</th>
+                            <th>Warsztat</th>
                             <th>Opis</th>
                             <th>Status</th>
                             <th>Koszt</th>
@@ -131,16 +141,27 @@
                             <tr>
                                 <td>@z.Pojazd?.Marka @z.Pojazd?.Model</td>
                                 <td>@z.DataZgloszenia.ToShortDateString()</td>
+                                <td>@(string.IsNullOrEmpty(z.NazwaWarsztatu) ? "-" : z.NazwaWarsztatu)</td>
                                 <td>@z.Opis</td>
                                 <td>
-                                    @if(z.Status == "Zakończone") { <span class="badge bg-success">Zakończone</span> }
-                                    else { <span class="badge bg-warning text-dark">W Trakcie</span> }
+                                    @if(z.Status == "Zakończone") 
+                                    { 
+                                        <span class="badge bg-success">Zakończone</span> 
+                                    }
+                                    else 
+                                    { 
+                                        <span class="badge bg-warning text-dark">W Trakcie</span> 
+                                    }
                                 </td>
                                 <td>@z.Koszt.ToString("C")</td>
                             </tr>
                         }
                     </tbody>
                 </table>
+            }
+            else
+            {
+                <div class="text-center text-muted py-3">Brak wpisów w historii serwisowej.</div>
             }
         </div>
     </div>
@@ -171,7 +192,7 @@
         // Filtrujemy te, które są aktualnie naprawiane
         autaWSerwisie = wszystkieZgloszenia.Where(z => z.Status != "Zakończone").ToList();
 
-        // SPRAWDZAMY HARMONOGRAMY (Nowa logika!)
+        // SPRAWDZAMY HARMONOGRAMY
         autaDoPrzegladu = new List<HarmonogramPrzegladow>();
         foreach (var p in pojazdy)
         {
@@ -196,7 +217,7 @@
         noweZgloszenie.Status = "W Trakcie";
         await SerwisPojazdu.DodajAsync(noweZgloszenie);
         
-        // Reset
+        // Reset formularza
         noweZgloszenie = new WpisSerwisowy { DataZgloszenia = DateTime.Now, Status = "W Trakcie" };
         await ZaladujDane();
     }

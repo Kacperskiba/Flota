@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Flota.Domain.Enums;
 
 namespace Flota.Domain.Entities;
 
@@ -18,8 +19,10 @@ public class WpisSerwisowy
     [Column(TypeName = "decimal(10,2)")]
     public decimal Koszt { get; set; }
 
+    public string NazwaWarsztatu { get; set; } = "";
     public DateTime DataZgloszenia { get; set; } = DateTime.Now;
     
     // Status: np. "W trakcie", "Zakończone"
     public string Status { get; set; } = "W Trakcie"; 
+    public TypNaprawy TypNaprawy { get; set; }
 }

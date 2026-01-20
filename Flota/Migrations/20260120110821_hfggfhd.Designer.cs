@@ -4,6 +4,7 @@ using Flota.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Flota.Migrations
 {
     [DbContext(typeof(FleetDbContext))]
-    partial class FleetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260120110821_hfggfhd")]
+    partial class hfggfhd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,7 +192,7 @@ namespace Flota.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("CenaZaLitr")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<bool>("CzyDoPelna")
                         .HasColumnType("bit");
@@ -198,20 +201,15 @@ namespace Flota.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("IloscLitrow")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("KierowcaId")
-                        .HasColumnType("int");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<decimal>("LacznyKoszt")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<int>("PojazdId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("KierowcaId");
 
                     b.HasIndex("PojazdId");
 
@@ -284,9 +282,6 @@ namespace Flota.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TypNaprawy")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("PojazdId");
@@ -326,19 +321,11 @@ namespace Flota.Migrations
 
             modelBuilder.Entity("Flota.Domain.Entities.Tankowanie", b =>
                 {
-                    b.HasOne("Flota.Domain.Entities.Kierowca", "Kierowca")
-                        .WithMany()
-                        .HasForeignKey("KierowcaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Flota.Domain.Entities.Pojazd", "Pojazd")
                         .WithMany("Tankowania")
                         .HasForeignKey("PojazdId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Kierowca");
 
                     b.Navigation("Pojazd");
                 });

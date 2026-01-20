@@ -19,10 +19,10 @@ builder.Services.AddDbContext<FleetDbContext>(o => o.UseSqlServer(conn));
 builder.Services.AddScoped<IPojazdSerwis, PojazdSerwis>();
 builder.Services.AddScoped<ITankowanieSerwis, TankowanieSerwis>();
 builder.Services.AddScoped<IKierowcaSerwis, KierowcaSerwis>();
-builder.Services.AddScoped<ISerwisPojazdu, SerwisPojazdu>();
-builder.Services.AddScoped<IPrzydzialSerwis, PrzydzialSerwis>();
-builder.Services.AddScoped<IUbezpieczenieSerwis, UbezpieczenieSerwis>();
-builder.Services.AddScoped<IHarmonogramSerwis, HarmonogramSerwis>();
+builder.Services.AddScoped<ISerwisPojazdu, TankowanieSerwis.SerwisPojazdu>();
+builder.Services.AddScoped<IPrzydzialSerwis, TankowanieSerwis.PrzydzialSerwis>();
+builder.Services.AddScoped<IUbezpieczenieSerwis, TankowanieSerwis.UbezpieczenieSerwis>();
+builder.Services.AddScoped<IHarmonogramSerwis, TankowanieSerwis.HarmonogramSerwis>();
 
 var app = builder.Build();
 

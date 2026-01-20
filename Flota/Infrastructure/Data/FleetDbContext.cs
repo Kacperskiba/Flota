@@ -16,14 +16,22 @@ public class FleetDbContext : DbContext
     public DbSet<HarmonogramPrzegladow> Harmonogramy { get; set; }
     public DbSet<Przydzial> Przydzialy { get; set; }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder) 
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Konfiguracja indeksów (to już miałeś)
         modelBuilder.Entity<Pojazd>()
             .HasIndex(p => p.NumerRejestracyjny)
             .IsUnique();
-            
+
         modelBuilder.Entity<Kierowca>()
             .HasIndex(k => k.NumerPrawaJazdy)
             .IsUnique();
+
+        // --- FIX NA BŁĄD TANKOWANIA ---
+        // Wymuszamy, żeby ID było traktowane jako Identity (auto-numerowanie)
+        modelBuilder.Entity<Tankowanie>()
+            .Property(t => t.Id)
+            .ValueGeneratedOnAdd();
+        // -----------------------------
     }
 }
