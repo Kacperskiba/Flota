@@ -11,7 +11,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold">🚗 Baza Pojazdów</h2>
+            <h2 class="fw-bold">Baza Pojazdów</h2>
             <p class="text-muted">Zarządzaj flotą, dodawaj nowe auta i sprawdzaj ich status.</p>
         </div>
         <div class="bg-light p-2 rounded border">
@@ -21,7 +21,7 @@
 
     <div class="card shadow-sm mb-5 border-0 bg-light">
         <div class="card-body">
-            <h5 class="card-title text-primary mb-3">➕ Rejestracja nowego pojazdu</h5>
+            <h5 class="card-title text-primary mb-3">Rejestracja nowego pojazdu</h5>
             
             <EditForm Model="@nowyPojazd" OnValidSubmit="DodajPojazd">
                 <DataAnnotationsValidator />
@@ -106,8 +106,8 @@
                                 </td>
                                 <td>
                                     <div class="small">
-                                        <span class="d-block">📅 Rok: <strong>@p.RokProdukcji</strong></span>
-                                        <span class="d-block">🛣️ @p.Przebieg.ToString("N0") km</span>
+                                        <span class="d-block">Rok: <strong>@p.RokProdukcji</strong></span>
+                                        <span class="d-block">@p.Przebieg.ToString("N0") km</span>
                                     </div>
                                 </td>
                                 <td>
@@ -125,7 +125,7 @@
                                             break;
                                         case StatusPojazdu.WSerwisie:
                                             <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">
-                                                🛠️ Serwis
+                                                🛠 Serwis
                                             </span>
                                             break;
                                         case StatusPojazdu.Wylaczony:
@@ -135,10 +135,10 @@
                                 </td>
                                 <td class="text-end pe-4">
                                     <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => Szczegoly(p.Id)" title="Szczegóły">
-                                        📂 Karta
+                                        Karta
                                     </button>
                                     <button class="btn btn-sm btn-outline-danger" @onclick="() => UsunPojazd(p.Id)" title="Usuń">
-                                        🗑️
+                                        Usuń
                                     </button>
                                 </td>
                             </tr>

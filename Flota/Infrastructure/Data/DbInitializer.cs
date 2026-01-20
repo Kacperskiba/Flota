@@ -10,8 +10,6 @@ public static class DbInitializer
 {
     public static void Initialize(FleetDbContext context) 
     {
-        // 1. HARD RESET BAZY (Wyczyść stare, wgraj nowe - OGROMNE)
-        context.Database.EnsureDeleted();
         context.Database.EnsureCreated();
 
         // ==========================================
