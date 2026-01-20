@@ -61,7 +61,7 @@
 
         <div class="card shadow-sm mb-4 @(alertPrzegladu ? "border-danger" : "border-info")">
             <div class="card-header @(alertPrzegladu ? "bg-danger text-white" : "bg-info text-dark") d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">📅 Harmonogram Przeglądów</h5>
+                <h5 class="mb-0">Harmonogram Przeglądów</h5>
                 @if (alertPrzegladu) { <span class="badge bg-white text-danger fw-bold">WYMAGANY PRZEGLĄD!</span> }
             </div>
             <div class="card-body">
@@ -112,7 +112,7 @@
 
                 <hr/>
                 <button class="btn btn-sm btn-outline-dark" type="button" @onclick="() => czyPokazacKonfiguracje = !czyPokazacKonfiguracje">
-                   ⚙️ Konfiguruj Harmonogram
+                   Konfiguruj Harmonogram
                 </button>
                 
                 @if (czyPokazacKonfiguracje)
@@ -145,7 +145,7 @@
         <div class="row">
             <div class="col-lg-6">
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-light"><h5 class="mb-0">📜 Polisy Ubezpieczeniowe</h5></div>
+                    <div class="card-header bg-light"><h5 class="mb-0">Polisy Ubezpieczeniowe</h5></div>
                     <div class="card-body p-0">
                         @if (ubezpieczenia.Any())
                         {
@@ -179,7 +179,7 @@
                 </div>
 
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-danger text-white"><h5 class="mb-0">🛠️ Historia Napraw</h5></div>
+                    <div class="card-header bg-danger text-white"><h5 class="mb-0">Historia Napraw</h5></div>
                     <div class="card-body p-0">
                         @if (serwisy.Any()) {
                             <table class="table table-hover mb-0">
@@ -201,7 +201,7 @@
 
             <div class="col-lg-6">
                  <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white"><h5 class="mb-0">⛽ Tankowania</h5></div>
+                    <div class="card-header bg-success text-white"><h5 class="mb-0">Tankowania</h5></div>
                     <div class="card-body p-0">
                          @if (tankowania.Any()) {
                             <table class="table table-hover mb-0">
@@ -221,7 +221,7 @@
                     </div>
                 </div>
                  <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning text-dark"><h5 class="mb-0">🔑 Kierowcy</h5></div>
+                    <div class="card-header bg-warning text-dark"><h5 class="mb-0">Kierowcy</h5></div>
                     <div class="card-body p-0">
                         @if (przydzialy.Any()) {
                             <table class="table table-hover mb-0">

@@ -48,16 +48,21 @@ public class KierowcaSerwis : IKierowcaSerwis
         }
     }
 }
+
 public class TankowanieSerwis : ITankowanieSerwis
 {
     private readonly FleetDbContext _context;
-    public TankowanieSerwis(FleetDbContext context) { _context = context; }
+
+    public TankowanieSerwis(FleetDbContext context)
+    {
+        _context = context;
+    }
 
     public async Task<List<Tankowanie>> PobierzWszystkieAsync()
     {
         // Include(t => t.Pojazd) pozwala wyświetlić markę auta w tabeli tankowań
         return await _context.Tankowania
-            .Include(t => t.Pojazd) 
+            .Include(t => t.Pojazd)
             .OrderByDescending(t => t.Data)
             .ToListAsync();
     }
@@ -81,14 +86,16 @@ public class TankowanieSerwis : ITankowanieSerwis
             // Zakładam, że w klasie Tankowanie masz pole 'AktualnyPrzebieg' (lub podobne), 
             // ale jeśli go nie ma w bazie (wg schematu str. 4-5 go nie ma!), 
             // to ten punkt może być trudny do zrealizowania bez zmiany bazy.
-        
+
             // JEDNAK: Jeśli specyfikacja tego wymaga, warto dodać pole 'Przebieg' do Tankowania.
             // Jeśli nie chcesz zmieniać bazy, to ten punkt musimy pominąć, 
             // ale zgodnie z logiką: tankowanie to świetny moment na aktualizację licznika.
         }
 
         await _context.SaveChangesAsync();
+    }
 }
+
 public class UbezpieczenieSerwis : IUbezpieczenieSerwis
 {
     private readonly FleetDbContext _context;
